@@ -1,0 +1,220 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_Ipro_MotorPower" Id="{c543df3e-e5ff-44c0-9d7a-938f099a67e7}">
+    <Declaration><![CDATA[INTERFACE I_Ipro_MotorPower
+]]></Declaration>
+    <Folder Name="Parameters" Id="{3d07359b-7e01-4eec-be43-8ab90aa28b60}" />
+    <Folder Name="Requests" Id="{c8788767-5005-4ab6-b433-64c9b2c00ae9}" />
+    <Folder Name="SetBeforInit" Id="{519a0f74-3e00-4d6f-af83-406953db9c88}" />
+    <Folder Name="Status" Id="{fe6257c1-1992-46da-9524-a9cc203bc5d5}" />
+    <Property Name="Active" Id="{f817ac78-9bed-4682-9538-a71cee528901}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY Active : bool]]></Declaration>
+      <Get Name="Get" Id="{2a1910c4-ef7b-4639-9ffa-05ba33b47426}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="Busy" Id="{50161faf-ccd5-432c-8d8e-54363d25b887}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY Busy : bool]]></Declaration>
+      <Get Name="Get" Id="{1ba27e72-5898-4d15-84f8-7c50a997053e}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="ControlMode" Id="{5c12d86d-b455-4138-a387-4e3396dbda11}" FolderPath="SetBeforInit\">
+      <Declaration><![CDATA[PROPERTY ControlMode : E_IProCtrlMode]]></Declaration>
+      <Get Name="Get" Id="{5b73fb7c-1902-427d-bf0d-f973df4d71ff}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+      <Set Name="Set" Id="{33b50898-7b34-4303-8ffb-dbbfaa9beb64}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+    <Property Name="ControlModeSwitchCmd" Id="{995b851c-f54b-452d-b650-96e6126d69ba}" FolderPath="Parameters\">
+      <Declaration><![CDATA[PROPERTY ControlModeSwitchCmd : bool]]></Declaration>
+      <Get Name="Get" Id="{099810d6-30b7-406a-be97-7e8c21b028d3}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="CurrentMode" Id="{d84910ca-4b79-4d9f-90c3-82428d7b6a84}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY CurrentMode : E_IProCurrentMode]]></Declaration>
+      <Get Name="Get" Id="{aa13d564-0182-4695-8580-5d6c5ef5f081}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="Enable" Id="{72b6a9dc-f1c0-4f36-a765-989f11faf8c4}" FolderPath="Parameters\">
+      <Declaration><![CDATA[PROPERTY Enable : bool]]></Declaration>
+      <Get Name="Get" Id="{e180f9e9-2500-4f07-a812-4390f2adc6dd}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="Error" Id="{808de606-9984-4e99-8cc3-a2b2355b9241}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY Error : bool]]></Declaration>
+      <Get Name="Get" Id="{7adc5102-15b2-46fb-9266-10fd258e75e0}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="ErrorID" Id="{eba52626-6e7b-4c80-b8cb-89fdc9cbc485}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY ErrorID : REFERENCE TO INT
+]]></Declaration>
+      <Get Name="Get" Id="{1ae1f15b-216f-4eaf-b327-5eb816d08fb7}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="InPosition" Id="{5fe03aee-4d3a-46d4-8c8a-88f74409c2bb}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY InPosition : bool]]></Declaration>
+      <Get Name="Get" Id="{e234b7ec-7441-4708-88d1-891507fcf1b8}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="IsInTorque" Id="{69564cc0-27b1-42af-abb9-792845f9c43a}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY IsInTorque : bool]]></Declaration>
+      <Get Name="Get" Id="{526056bc-4016-47ba-aea9-fc8ffd277812}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="isStop" Id="{e5e4fc3e-44cf-4fb6-98e0-4dac1876084d}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY isStop : bool]]></Declaration>
+      <Get Name="Get" Id="{1ec42008-8ab0-4547-a1c1-7f10f9154584}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="MaxSpeed" Id="{1c282d17-8ce7-43ae-944e-75f36051ea5c}" FolderPath="SetBeforInit\">
+      <Declaration><![CDATA[PROPERTY MaxSpeed : lreal// large than 0]]></Declaration>
+      <Get Name="Get" Id="{31c81d87-89bc-4c62-9dad-4a0d54c7272e}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+      <Set Name="Set" Id="{f38813d8-4d61-4108-b987-18d3e027f8ba}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+    <Property Name="MaxTorque" Id="{7448fa9f-773b-46c8-ba83-8bd1634ebf62}" FolderPath="SetBeforInit\">
+      <Declaration><![CDATA[PROPERTY MaxTorque : Lreal// // % larger than 0]]></Declaration>
+      <Get Name="Get" Id="{aa4a9bd8-3afe-4dcc-84c4-d66be1481026}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+      <Set Name="Set" Id="{edf579d8-3c4a-4f80-ab04-9a879a1ec1c3}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+    <Method Name="MR_Abort" Id="{6b7355ea-a230-4fcd-b38c-196eca9c8280}" FolderPath="Requests\">
+      <Declaration><![CDATA[METHOD MR_Abort : BOOL
+]]></Declaration>
+    </Method>
+    <Method Name="MR_Home" Id="{5e365130-9ee2-455f-8ef4-c19767f3ec36}" FolderPath="Requests\">
+      <Declaration><![CDATA[METHOD MR_Home : BOOL // control mode must have Position Mode // actually it the same as MOVE absolute 
+VAR_INPUT
+	lrHomePosition : LREAL;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="MR_Init" Id="{8da68057-161c-467e-bc76-2298ad85c346}" FolderPath="Requests\">
+      <Declaration><![CDATA[(*this must be called 2 times, first: after set All parram in "SetBefor Init" folder and before run FBModbusMaster
+							 second : after Modbusmster running and state machine in Init state.*)
+METHOD MR_Init : BOOL// need to set control mode carefully, the control mode only work correct if you set p0.03 and restart the driver, and there for if you change control mode cmd during driver power ON, the control mode will not effect
+]]></Declaration>
+    </Method>
+    <Method Name="MR_MoveAbsolute" Id="{fc54e95e-5f3e-4c7c-ace7-df079eed0c41}" FolderPath="Requests\">
+      <Declaration><![CDATA[METHOD MR_MoveAbsolute : BOOL // control mode must have Position Mode
+VAR_INPUT
+	lrAbsolutePosition : LREAL;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="MR_MoveTorque" Id="{a9c8bc9a-6b60-4f2b-a03f-5dfe2cc21378}" FolderPath="Requests\">
+      <Declaration><![CDATA[METHOD MR_MoveTorque : BOOL // control mode must have torque Mode
+VAR_INPUT
+	lrTorque	: LREAL;// must smaller than max torque
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="MR_Reset" Id="{9b1e22f7-b5dd-44b1-99bd-8ba0419d70ad}" FolderPath="Requests\">
+      <Declaration><![CDATA[METHOD MR_Reset : BOOL// can't not use this method because i didn't find way to reset
+]]></Declaration>
+    </Method>
+    <Method Name="MR_Stop" Id="{8651239c-6ccc-4a36-bf17-5823b0334d66}" FolderPath="Requests\">
+      <Declaration><![CDATA[METHOD MR_Stop : BOOL ]]></Declaration>
+    </Method>
+    <Property Name="NagativePositionLimit" Id="{1176fd52-4e49-4c33-a209-df343cb6db4e}" FolderPath="SetBeforInit\">
+      <Declaration><![CDATA[PROPERTY NagativePositionLimit : lreal]]></Declaration>
+      <Get Name="Get" Id="{e022ae6b-4f6c-435d-b6ea-9f8ba7a85ffd}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+      <Set Name="Set" Id="{194e4f37-1796-46c7-8fda-2e3a37959acf}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+    <Property Name="PositionCmd" Id="{ecabd0b5-430e-4546-bc56-d9b8d7ae0a51}" FolderPath="Parameters\">
+      <Declaration><![CDATA[PROPERTY PositionCmd : lreal]]></Declaration>
+      <Get Name="Get" Id="{ec5ce21c-eb4e-45eb-9d2d-42b7d08941ae}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="PositionFeedBack" Id="{1b7147fc-2525-485b-b645-4e4d3feb4a2c}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY PositionFeedBack : lreal]]></Declaration>
+      <Get Name="Get" Id="{9eadf0d0-692b-4972-a7ec-339b1a7afe05}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="PositionModeSelectionCmd" Id="{158c76f0-368a-4605-9ccc-e38800803ee2}" FolderPath="Parameters\">
+      <Declaration><![CDATA[PROPERTY PositionModeSelectionCmd : E_IPro_PositionCmdModeSelection]]></Declaration>
+      <Get Name="Get" Id="{93f8e9ca-5130-4d94-aaa0-0a3c4d795911}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="PositionModeSelectionFeedback" Id="{c24fe8d4-34ee-4cb6-9485-406bfe199605}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY PositionModeSelectionFeedback : E_IPro_PositionCmdModeSelection]]></Declaration>
+      <Get Name="Get" Id="{b56a1597-09f6-4923-98b4-74b79ff0f84f}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="PositionPositiveLimit" Id="{65991d73-3f16-4967-8796-644e6cd77d11}" FolderPath="SetBeforInit\">
+      <Declaration><![CDATA[PROPERTY PositionPositiveLimit : lreal]]></Declaration>
+      <Get Name="Get" Id="{0b43bb6f-86db-460e-8961-614feac12680}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+      <Set Name="Set" Id="{040a727d-4353-409a-8910-a8c310f40775}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+    <Property Name="SpeedCmd" Id="{80513a53-e5ac-4fb3-ad33-69f72acf349e}" FolderPath="Parameters\">
+      <Declaration><![CDATA[PROPERTY SpeedCmd : LREAL // r/ minute]]></Declaration>
+      <Get Name="Get" Id="{fa8b144c-319b-4d92-acd4-51e9b0327678}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+      <Set Name="Set" Id="{810f51ce-a8a0-416b-bda2-874d895a9a3b}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+    <Property Name="SpeedFeedback" Id="{7a656d80-a974-494a-9e99-bd618898dff7}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY SpeedFeedback : Lreal]]></Declaration>
+      <Get Name="Get" Id="{354d87af-3697-433b-9dba-7399108512b9}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="State" Id="{f7ee26ed-5e4d-4e8f-bf4c-d3955bafcb44}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY State : E_IPro_State]]></Declaration>
+      <Get Name="Get" Id="{d84e70ef-3968-4a2d-aaa6-eb84051d49f4}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="Status" Id="{3b352231-6273-494b-ae1d-fdd8f800a88c}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY Status : E_IProStatus	]]></Declaration>
+      <Get Name="Get" Id="{12247c6d-0791-4708-8e5f-74b6fe498162}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="TorqueCmd" Id="{510b39de-1542-4b73-98d5-a4802991c79b}" FolderPath="Parameters\">
+      <Declaration><![CDATA[PROPERTY TorqueCmd : lreal // %]]></Declaration>
+      <Get Name="Get" Id="{c96c232a-497b-49ac-ad09-bca288efa079}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="TorqueFeedback" Id="{27846add-514c-49a9-82e0-2d58e0d26b6a}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY TorqueFeedback : lreal]]></Declaration>
+      <Get Name="Get" Id="{369e6f3f-0f94-431c-bc3e-be5a53313627}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+  </Itf>
+</TcPlcObject>

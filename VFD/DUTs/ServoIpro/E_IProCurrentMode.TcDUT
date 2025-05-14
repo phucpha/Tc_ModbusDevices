@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_IProCurrentMode" Id="{50135a2d-a6d9-4080-9280-ce1ba9adfcf5}">
+    <Declaration><![CDATA[//{attribute 'strict'}
+TYPE E_IProCurrentMode :
+(
+	IPRO_CURRENT_MODE_NOT_RESPONDE := -10,
+	IPRO_CURRENT_MODE_POSITION		:= 0,
+	IPRO_CURRENT_MODE_SPEED			:= 1,
+	IPRO_CURRENT_MODE_TORQUE		:= 2
+)INT := IPRO_CURRENT_MODE_NOT_RESPONDE;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

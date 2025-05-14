@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_UniversalVFDModbus_Ex" Id="{525cf8e8-ff46-40d7-a282-18fc349596ed}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_UniversalVFDModbus_Ex EXTENDS FB_UniversalVFDModbus
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[SUPER^();]]></ST>
+    </Implementation>
+    <Method Name="Convert" Id="{8473276c-a2e5-4241-a5e0-333391def56e}">
+      <Declaration><![CDATA[METHOD Convert : BOOL
+VAR_INPUT
+	iRegionNo	:	INT;
+	pReadData	:	POINTER TO word;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE iRegionNo OF
+	0:
+		IF pReadData[0] = 10 THEN
+			eVfdStatus := VFD_STATUS_READY_TO_RUN;
+		END_IF
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_UniversalVFDModbus_Ex">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalVFDModbus_Ex.Convert">
+      <LineId Id="7" Count="1" />
+      <LineId Id="10" Count="2" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

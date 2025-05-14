@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_VFD_Status" Id="{dd500065-9e3a-4fea-984f-ea1c76e1e0e0}">
+    <Declaration><![CDATA[{attribute 'strict'}
+{attribute 'to_string'}
+TYPE E_VFD_Status :
+(	
+	VFD_STATUS_NOT_RESPOND		:= 0,
+	VFD_STATUS_READY_TO_RUN		:= 1,
+	VFD_STATUS_STOP				:= 2,
+	VFD_STATUS_RUNNING_FORWARD	:= 3,
+	VFD_STATUS_RUNNING_REVERSE	:= 4,
+	VFD_STATUS_WARNING			:= 6,// should not use
+	VFD_STATUS_FAULT			:= 7
+	//VFD_STATUS_ALARM			:= 8
+			
+) UINT := VFD_STATUS_NOT_RESPOND;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_VFD_State" Id="{f3cfce94-32dc-47dc-80a2-f8d91b1879cc}">
+    <Declaration><![CDATA[{attribute 'strict'}
+{attribute 'to_string'}
+TYPE E_VFD_State :
+(
+	VFD_ABORTING := -50,
+	VFD_UNINITIALIZED := 0,
+	VFD_INITIALIZING	:= 10,
+	VFD_READY_INITIALIZED := 20,
+	VFD_IDLE		:= 30,
+	VFD_RUN_FORWARD	:= 40,
+	VFD_RUN_FORWARD_DONE	:= 45,
+	VFD_RUN_REVERSE	:= 50,
+	VFD_RUN_REVERSE_DONE := 55,
+	VFD_STOP		:= 60,
+	VFD_STOP_DONE	:= 70,
+	VFD_RESET	:= 80,
+	VFD_RESET_DONE	:= 90
+)INT;
+END_TYPE
+
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

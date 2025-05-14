@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_IProStatus" Id="{7918787d-e175-4404-b45a-268ab7cf3537}">
+    <Declaration><![CDATA[//{attribute 'strict'}
+{attribute 'to_string'}
+TYPE E_IProStatus :
+(
+	IPRO_STATUS_NOT_RESPOND := -10,
+	IPRO_STATUS_INTITIZATION := 0,
+	IPRO_STATUS_THE_HIGH_VOLTAGE := 1,
+	IPRO_STATUS_READY			:= 2,
+	IPRO_STATUS_RUN				:= 3, // OPERATION
+	IPRO_STATUS_FORCED_TO_STOP	:= 4,
+	IPRO_STATUS_FAULT			:= 5,
+	IPRO_STATUS_STO_IN			:= 6
+)INT := IPRO_STATUS_NOT_RESPOND;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

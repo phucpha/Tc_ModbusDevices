@@ -1,0 +1,276 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_VFD_ABB_ACS480" Id="{6aa2ea18-dd89-4164-9c3d-f5d9fe47a707}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_VFD_ABB_ACS480 EXTENDS FB_UniversalVFDModbus
+
+VAR
+	VFD_CTRL_RUN_EMERGENCY_STOP : WORD;
+	TempData0: U_Word2Int;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[SUPER^();]]></ST>
+    </Implementation>
+    <Method Name="Convert" Id="{e7c03c2d-bed3-4696-9e25-058c9a908e4f}">
+      <Declaration><![CDATA[METHOD Convert : BOOL
+VAR_INPUT
+	iRegionNo	:	INT;
+	pReadData	:	POINTER TO word;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE	iRegionNo OF
+
+	0: // status
+		IF pReadData[0].15 = TRUE THEN
+			eVfdStatus := VFD_STATUS_FAULT;
+			
+		ELSIF (eVfdState = VFD_INITIALIZING
+			OR eVfdState = VFD_READY_INITIALIZED)
+			AND pReadData[0].0 = TRUE
+			AND pReadData[0].1 = TRUE	
+			AND pReadData[0].2 = TRUE
+			THEN
+			eVfdStatus :=  VFD_STATUS_READY_TO_RUN;
+				
+		ELSIF pReadData[0].3 = FALSE THEN
+			eVfdStatus :=  VFD_STATUS_STOP;
+			
+		ELSIF pReadData[0].3 = TRUE	//run
+			AND pReadData[0].10 = FALSE	// Drive reference is in the forward direction	
+			AND pReadData[0].11 = FALSE//Drive is running in the forward direction
+			THEN		
+			eVfdStatus := VFD_STATUS_RUNNING_FORWARD;
+		
+		ELSIF pReadData[0].3 = TRUE	//run
+			AND pReadData[0].10 = TRUE	// Drive reference is in the forward direction	
+			AND pReadData[0].11 = TRUE//Drive is running in the forward direction
+			THEN		
+			eVfdStatus := VFD_STATUS_RUNNING_REVERSE;
+		
+		END_IF
+	1: 
+		TempData0.iWord := pReadData[0];
+		lrHzActual		:= ABS(INT_TO_LREAL( TempData0.iInt)*0.0025);//50/20000;	
+		lrCurrent		:= WORD_TO_LREAL( pReadData[1])*0.01;	//46.05 = 100
+		lrDcVoltage		:= WORD_TO_LREAL( pReadData[5])*0.1;	
+	
+	2: 
+		lrVacOutToMotor	:= WORD_TO_LREAL( pReadData[0]);	//4099	/1
+		lrPowerKw		:= WORD_TO_LREAL( pReadData[1])*0.01;		//46.04
+	
+	3:
+		lrTotalKwh :=  WORD_TO_LREAL( pReadData[0])*0.1;
+		
+	4: 
+		lrSpeed :=  WORD_TO_LREAL( pReadData[0]);
+	
+	
+
+
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="FirstCycle" Id="{9c6012ba-0897-4553-a035-a16ab2eb91cf}">
+      <Declaration><![CDATA[METHOD  FirstCycle 
+VAR_INPUT
+	sName : STRING;
+	iUnitID : BYTE ; // modbus address of the device : 1- 255
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SUPER^.FirstCycle( sName := sName, iUnitID := iUnitID);
+(*Assign Ctrol Word : user Manual M-driver*)
+VFD_CTRL_RESET_FAULT := 2#0001_0001;
+VFD_CTRL_RUN_FORWARD := 2#0000_0010;
+VFD_CTRL_RUN_REVERSE := 2#0000_0110;
+VFD_CTRL_STOP_FREE 	 := 2#0010_0000_0001;
+VFD_CTRL_STOP_SPEED_DOWN := 2#1000_0001;
+VFD_CTRL_RUN_EMERGENCY_STOP := 2#0001_0000_0001;
+
+// actual state	
+	arrAddressRead[0][0] := 3;
+	arrAddressRead[0][1] := 1;
+	arrAddressRead[0][2] := E_ModbusFunction.ReadHoldingRegisters;
+
+//mode0 address = 40000 + function*100 + sub function -1
+	// actual hz  
+	arrAddressRead[1][0] := 105; // 01.06
+	arrAddressRead[1][1] := 6;
+	arrAddressRead[1][2] := E_ModbusFunction.ReadHoldingRegisters;
+	
+	arrAddressRead[2][0] := 112; // 01.13
+	arrAddressRead[2][1] := 2;
+	arrAddressRead[2][2] := E_ModbusFunction.ReadHoldingRegisters;
+	
+	arrAddressRead[3][0] := 119; // 01.20
+	arrAddressRead[3][1] := 1;
+	arrAddressRead[3][2] := E_ModbusFunction.ReadHoldingRegisters;
+	
+	arrAddressRead[4][0] := 101; // 01.20
+	arrAddressRead[4][1] := 1;
+	arrAddressRead[4][2] := E_ModbusFunction.ReadHoldingRegisters;
+iNumAddRegionRead	:= 5;
+
+/////write control WORD VFD, // use ctrol word and frequency in 1 modbus write
+arrAddressWrite[iCTRL_WORD][0]	:= 0;
+arrAddressWrite[iCTRL_WORD][1]	:= 2;
+arrAddressWrite[iCTRL_WORD][2]	:= VFD_CTRL_STOP_FREE;
+arrAddressWrite[iCTRL_WORD][10]	:= E_ModbusFunction.WriteMultipleRegisters;
+
+// Frequency
+//arrAddressWrite[iCTRL_FREQUENCY_WORD][0]	:= 1;
+//arrAddressWrite[iCTRL_FREQUENCY_WORD][1]	:= 1;
+							(*MUST BE CARE FULL WHEN USE FLOATING POINT CONVERT*)
+arrAddressWrite[iCTRL_FREQUENCY_WORD][3]	:= LREAL_TO_WORD( FC_ScaleValue(	rangeRawMin := 0,
+																				rangeRawMax := 50,
+																				RangeScaleMin :=0,
+																				RangeScaleMax := 20000,
+																				ValueRaw := 0)
+										  );
+										  
+iNumAddRegionWrite := 1;// use ctrol word and frequency in 1 modbus write
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Aborting" Id="{1153108d-be3e-4ace-a85c-20381c819130}">
+      <Declaration><![CDATA[METHOD PROTECTED  MS_Aborting]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[arrAddressWrite[iCTRL_WORD][2]	:= VFD_CTRL_STOP_FREE;
+SUPER^.MS_Aborting();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Initializing" Id="{ab37f1f5-94e2-4589-8a3c-01bf5c976d67}">
+      <Declaration><![CDATA[METHOD  PROTECTED  MS_Initializing
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SUPER^.MS_Initializing();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_RunForward" Id="{6e9a1628-244c-4e7a-8cb8-78c257d44701}">
+      <Declaration><![CDATA[METHOD PROTECTED  MS_RunForward
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// use ctrol word and frequency in 1 modbus write WRITE MULTIES REGIS
+arrAddressWrite[iCTRL_WORD][3] :=  LREAL_TO_WORD( 
+															FC_ScaleValue(	rangeRawMin := 0,
+																			rangeRawMax := 50,
+																			RangeScaleMin := 0,
+																			RangeScaleMax := 20000,
+																			ValueRaw := lrHzControl) 
+																				);
+SUPER^.MS_RunForward();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_RunReverse" Id="{8b2a447d-5e52-4025-88db-623fb12ab327}">
+      <Declaration><![CDATA[METHOD PROTECTED  MS_RunReverse
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// use ctrol word and frequency in 1 modbus write WRITE MULTIES REGIS
+arrAddressWrite[iCTRL_WORD][3] :=  LREAL_TO_WORD( 
+															FC_ScaleValue(	rangeRawMin := 0,
+																			rangeRawMax := 50,
+																			RangeScaleMin := 0,
+																			RangeScaleMax := 20000,
+																			ValueRaw := lrHzControl) 
+																				);
+SUPER^.MS_RunReverse();]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_VFD_ABB_ACS480">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_VFD_ABB_ACS480.Convert">
+      <LineId Id="13" Count="0" />
+      <LineId Id="22" Count="1" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="108" Count="0" />
+      <LineId Id="112" Count="0" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="114" Count="1" />
+      <LineId Id="126" Count="0" />
+      <LineId Id="122" Count="0" />
+      <LineId Id="124" Count="0" />
+      <LineId Id="111" Count="0" />
+      <LineId Id="121" Count="0" />
+      <LineId Id="117" Count="0" />
+      <LineId Id="127" Count="0" />
+      <LineId Id="96" Count="0" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="97" Count="0" />
+      <LineId Id="99" Count="0" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="85" Count="0" />
+      <LineId Id="100" Count="0" />
+      <LineId Id="102" Count="3" />
+      <LineId Id="101" Count="0" />
+      <LineId Id="106" Count="0" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="150" Count="0" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="139" Count="0" />
+      <LineId Id="73" Count="0" />
+      <LineId Id="140" Count="0" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="141" Count="0" />
+      <LineId Id="138" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="142" Count="3" />
+      <LineId Id="147" Count="0" />
+      <LineId Id="146" Count="0" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="131" Count="0" />
+      <LineId Id="136" Count="0" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_VFD_ABB_ACS480.FirstCycle">
+      <LineId Id="7" Count="0" />
+      <LineId Id="61" Count="4" />
+      <LineId Id="60" Count="0" />
+      <LineId Id="71" Count="0" />
+      <LineId Id="19" Count="3" />
+      <LineId Id="90" Count="0" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="23" Count="4" />
+      <LineId Id="86" Count="0" />
+      <LineId Id="73" Count="2" />
+      <LineId Id="87" Count="0" />
+      <LineId Id="76" Count="2" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="79" Count="1" />
+      <LineId Id="89" Count="0" />
+      <LineId Id="28" Count="5" />
+      <LineId Id="96" Count="0" />
+      <LineId Id="34" Count="3" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="38" Count="7" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="8" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_VFD_ABB_ACS480.MS_Aborting">
+      <LineId Id="3" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_VFD_ABB_ACS480.MS_Initializing">
+      <LineId Id="3" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_VFD_ABB_ACS480.MS_RunForward">
+      <LineId Id="22" Count="0" />
+      <LineId Id="13" Count="5" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_VFD_ABB_ACS480.MS_RunReverse">
+      <LineId Id="22" Count="0" />
+      <LineId Id="13" Count="5" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

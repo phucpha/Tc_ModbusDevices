@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_IProCtrlMode" Id="{6f8e9288-5bde-42dd-a4c9-001df98ab8c0}">
+    <Declaration><![CDATA[//{attribute 'strict'}
+TYPE E_IProCtrlMode :
+(
+	
+	IPRO_CTRL_MODE_POSITION	:= 0,
+	IPRO_CTRL_MODE_SPEED	:= 1,
+	IPRO_CTRL_MODE_TORQUE	:= 2,
+	IPRO_CTRL_MODE_POSITION_SPEED := 3,
+	IPRO_CTRL_MODE_POSITION_TORQUE	:= 4,
+	IPRO_CTRL_MODE_SPEED_TORQUE	:= 5,
+	IPRO_CTRL_MODE_FULL_CLOSE_LOOP	:= 6,
+	IPRO_CTRL_MODE_CAN_OPEN	:= 7,
+	IPRO_CTRL_MODE_ETHERCAT := 8,
+	IPRO_CTRL_MODE_MOTION_NET := 9
+)  UINT := IPRO_CTRL_MODE_POSITION;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

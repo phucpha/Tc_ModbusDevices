@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FileVersion>1.0.0.0</FileVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{9fd5ac91-02a1-42c9-8640-285c013f3e60}</ProjectGuid>
+    <SubObjectsSortedByName>True</SubObjectsSortedByName>
+    <DownloadApplicationInfo>true</DownloadApplicationInfo>
+    <WriteProductVersion>true</WriteProductVersion>
+    <GenerateTpy>false</GenerateTpy>
+    <Name>VFD</Name>
+    <ProgramVersion>3.1.4024.0</ProgramVersion>
+    <Application>{a2aba8b7-964d-4ba9-91f1-460b98f08a67}</Application>
+    <TypeSystem>{24265bf0-4b41-4110-800c-802e064634cd}</TypeSystem>
+    <Implicit_Task_Info>{345d820d-c97e-4fc3-81ce-e7b64b8ee43c}</Implicit_Task_Info>
+    <Implicit_KindOfTask>{39534e31-3ed3-4f17-87b2-f20092d6fa5d}</Implicit_KindOfTask>
+    <Implicit_Jitter_Distribution>{6ed14e2e-4218-42be-9541-c633a36b7443}</Implicit_Jitter_Distribution>
+    <LibraryReferences>{de70af89-0dfc-4bf5-8d17-89887778e6b0}</LibraryReferences>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="DUTs\ServoIpro\E_IProCtrlMode.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ServoIpro\E_IProCurrentMode.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ServoIpro\E_IProStatus.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ServoIpro\E_IPro_PositionCmdModeSelection.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ServoIpro\E_IPro_State.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\VFD\E_VfdMdriverFaultInfor.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\VFD\E_VFD_State.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\VFD\E_VFD_Status.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PlcTask.TcTTO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\FB_IPRO_ModbusRTU.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\FB_UniversalVFDModbus.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\FB_VFD_ABB_ACS480.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\FB_VFD_Mdriver.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\FB_VFD_V20_Siemens.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\I_Ipro_MotorPower.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\I_UniversalVFD.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\MAIN.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TEST\FB_ModbusMaster_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TEST\FB_ModbusSlave_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TEST\FB_UniversalVFDModbus_Ex.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TEST\FB_UniversalVFDModbus_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TEST\PGR_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="DUTs" />
+    <Folder Include="DUTs\VFD" />
+    <Folder Include="DUTs\ServoIpro" />
+    <Folder Include="GVLs" />
+    <Folder Include="TEST" />
+    <Folder Include="POUs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PlaceholderReference Include="MODBUSRTU">
+      <DefaultResolution>Modbus RTU Base, * (NewEngineer)</DefaultResolution>
+      <Namespace>MODBUSRTU</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_ModbusRTU">
+      <DefaultResolution>Tc2_ModbusRTU, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_ModbusRTU</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_Standard">
+      <DefaultResolution>Tc2_Standard, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_Standard</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_System">
+      <DefaultResolution>Tc2_System, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_System</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc3_Module">
+      <DefaultResolution>Tc3_Module, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc3_Module</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="TC3_Utilities_C">
+      <DefaultResolution>TC3_Utilities_C, * (NewEngineer)</DefaultResolution>
+    </PlaceholderReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="TEST\Readme.txt">
+      <SubType>Content</SubType>
+    </Content>
+    <None Include="VFD.tmc">
+      <SubType>Content</SubType>
+    </None>
+  </ItemGroup>
+  <ProjectExtensions>
+    <PlcProjectOptions>
+      <XmlArchive>
+        <Data>
+          <o xml:space="preserve" t="OptionKey">
+      <v n="Name">"&lt;ProjectRoot&gt;"</v>
+      <d n="SubKeys" t="Hashtable" />
+      <d n="Values" t="Hashtable" />
+    </o>
+        </Data>
+        <TypeList>
+          <Type n="Hashtable">System.Collections.Hashtable</Type>
+          <Type n="OptionKey">{54dd0eac-a6d8-46f2-8c27-2f43c7e49861}</Type>
+          <Type n="String">System.String</Type>
+        </TypeList>
+      </XmlArchive>
+    </PlcProjectOptions>
+  </ProjectExtensions>
+</Project>

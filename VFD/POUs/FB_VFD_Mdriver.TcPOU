@@ -1,0 +1,215 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_VFD_Mdriver" Id="{5223214a-1b30-4e2e-a904-0c24e7b24c15}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_VFD_Mdriver EXTENDS FB_UniversalVFDModbus
+
+VAR
+	eFaultInfor	: E_VfdMdriverFaultInfor;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[//bError := eVfdStatus
+SUPER^();]]></ST>
+    </Implementation>
+    <Method Name="Convert" Id="{5fb3dba2-a0b4-4ee1-83a3-fa8441b1b6d6}">
+      <Declaration><![CDATA[METHOD Convert : BOOL
+VAR_INPUT
+	iRegionNo	:	INT;
+	pReadData	:	POINTER TO word;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE	iRegionNo OF
+	0: 
+	
+		lrHzActual		:= WORD_TO_LREAL( pReadData[0])*0.01;	//4097	/unit /100
+		lrDcVoltage		:= WORD_TO_LREAL( pReadData[1])*0.1;	//4098 	/10
+		lrVacOutToMotor	:= WORD_TO_LREAL( pReadData[2]);	//4099	/1
+		lrCurrent		:= WORD_TO_LREAL(  pReadData[3])*0.01;		//4100	/100
+		//4 reserve
+		lrPowerKw		:= WORD_TO_LREAL(  pReadData[5])*0.001;		//4102	/1000> kW
+	
+	1: // status
+		CASE pReadData[0] OF
+			0: eVfdStatus := VFD_STATUS_STOP;
+			
+			1: 
+				eVfdStatus := VFD_STATUS_RUNNING_FORWARD;
+			2:
+				eVfdStatus := VFD_STATUS_RUNNING_REVERSE;
+			3: 
+				eVfdStatus := VFD_STATUS_STOP;
+		END_CASE
+		// important
+		IF eVfdState = VFD_INITIALIZING THEN
+			IF eFaultInfor = E_VfdMdriverFaultInfor.Nofault
+			AND eVfdStatus = VFD_STATUS_STOP THEN
+				eVfdStatus := VFD_STATUS_READY_TO_RUN;
+			ELSIF eFaultInfor <> E_VfdMdriverFaultInfor.Nofault THEN
+				eVfdStatus := VFD_STATUS_FAULT;
+			END_IF
+		END_IF
+		IF eFaultInfor <> E_VfdMdriverFaultInfor.Nofault THEN
+			eVfdStatus := VFD_STATUS_FAULT;
+		END_IF
+		IF iModbusErrorID = MODBUSERROR_NO_RESPONSE THEN
+			eVfdStatus := VFD_STATUS_NOT_RESPOND;
+		END_IF
+		// important
+	
+	2: 
+	
+		iErrorID := WORD_TO_UDINT( pReadData[0]);
+		eFaultInfor :=  WORD_TO_UINT( pReadData[0]);
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="FirstCycle" Id="{f426d38f-e7ac-4186-81e6-7273f39d8836}">
+      <Declaration><![CDATA[METHOD  FirstCycle 
+VAR_INPUT
+	sName : STRING;
+	iUnitID : BYTE ; // modbus address of the device : 1- 255
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SUPER^.FirstCycle( sName := sName, iUnitID := iUnitID);
+(*Assign Ctrol Word : user Manual M-driver*)
+VFD_CTRL_RESET_FAULT := 7;
+VFD_CTRL_RUN_FORWARD := 1;
+VFD_CTRL_RUN_REVERSE := 2;
+VFD_CTRL_STOP_FREE 		:= 5;
+VFD_CTRL_STOP_SPEED_DOWN	:= 6;
+///  actual hz, current, voltage
+arrAddressRead[0][0] := 4097;
+arrAddressRead[0][1]	:= 6;
+arrAddressRead[0][2]	:= E_ModbusFunction.ReadHoldingRegisters;
+
+// actual state	
+arrAddressRead[1][0] := 16#3000;
+arrAddressRead[1][1]	:= 1;
+arrAddressRead[1][2]	:= E_ModbusFunction.ReadHoldingRegisters;
+
+// fault infor
+arrAddressRead[2][0] := 16#8000;
+arrAddressRead[2][1]	:= 1;
+arrAddressRead[2][2]	:= E_ModbusFunction.ReadHoldingRegisters;
+
+iNumAddRegionRead	:= 3;
+
+/////write control WORD VFD
+arrAddressWrite[iCTRL_WORD][0]	:= 16#2000;
+arrAddressWrite[iCTRL_WORD][1]	:= 1;
+arrAddressWrite[iCTRL_WORD][2]	:= VFD_CTRL_STOP_FREE;
+arrAddressWrite[iCTRL_WORD][10]	:= E_ModbusFunction.WriteSingleRegister;
+// Frequency
+arrAddressWrite[iCTRL_FREQUENCY_WORD][0]	:= 4096;
+arrAddressWrite[iCTRL_FREQUENCY_WORD][1]	:= 1;
+							(*MUST BE CARE FULL WHEN USE FLOATING POINT CONVERT*)
+arrAddressWrite[iCTRL_FREQUENCY_WORD][2]	:= LREAL_TO_WORD( FC_ScaleValue(	rangeRawMin := 0,
+															rangeRawMax := 50,
+															RangeScaleMin :=0,
+															RangeScaleMax := 10000,
+															ValueRaw := 0)
+										  );
+arrAddressWrite[iCTRL_FREQUENCY_WORD][10]	:= E_ModbusFunction.WriteSingleRegister;
+										  
+iNumAddRegionWrite := 2;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Aborting" Id="{17047c0d-941e-4b71-8ea4-5fa97f7294f2}">
+      <Declaration><![CDATA[METHOD PROTECTED  MS_Aborting]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[arrAddressWrite[iCTRL_WORD][2]	:= VFD_CTRL_STOP_FREE;
+SUPER^.MS_Aborting();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_RunForward" Id="{fcf828fe-6b6d-4c5b-9524-28ccd4e3e7e3}">
+      <Declaration><![CDATA[METHOD PROTECTED  MS_RunForward
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[arrAddressWrite[iCTRL_FREQUENCY_WORD][2] :=  LREAL_TO_WORD( 
+															FC_ScaleValue(	rangeRawMin := 0,
+																			rangeRawMax := 50,
+																			RangeScaleMin := 0,
+																			RangeScaleMax := 10000,
+																			ValueRaw := lrHzControl) 
+																				);
+SUPER^.MS_RunForward();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_RunReverse" Id="{e8f66053-2fc5-43fc-84ae-6cfb3c721d04}">
+      <Declaration><![CDATA[METHOD PROTECTED  MS_RunReverse
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[arrAddressWrite[iCTRL_FREQUENCY_WORD][2] :=  LREAL_TO_WORD( 
+															FC_ScaleValue(	rangeRawMin := 0,
+																			rangeRawMax := 50,
+																			RangeScaleMin := 0,
+																			RangeScaleMax := 10000,
+																			ValueRaw := lrHzControl) 
+																				);
+SUPER^.MS_RunReverse();]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_VFD_Mdriver">
+      <LineId Id="12" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_VFD_Mdriver.Convert">
+      <LineId Id="13" Count="6" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="21" Count="3" />
+      <LineId Id="63" Count="1" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="32" Count="4" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="57" Count="4" />
+      <LineId Id="55" Count="1" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="47" Count="3" />
+      <LineId Id="25" Count="4" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_VFD_Mdriver.FirstCycle">
+      <LineId Id="7" Count="0" />
+      <LineId Id="61" Count="4" />
+      <LineId Id="60" Count="0" />
+      <LineId Id="15" Count="2" />
+      <LineId Id="71" Count="0" />
+      <LineId Id="19" Count="3" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="23" Count="3" />
+      <LineId Id="73" Count="0" />
+      <LineId Id="27" Count="10" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="38" Count="5" />
+      <LineId Id="74" Count="0" />
+      <LineId Id="44" Count="1" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="8" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_VFD_Mdriver.MS_Aborting">
+      <LineId Id="3" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_VFD_Mdriver.MS_RunForward">
+      <LineId Id="13" Count="5" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_VFD_Mdriver.MS_RunReverse">
+      <LineId Id="13" Count="5" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="MAIN" Id="{11bef6c1-a7ff-4a5c-9702-e29f3bcb57ac}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+	fbModbusMaster : MODBUSRTU.FB_ModbusMaster_PcCOM;
+	fbabb : FB_VFD_ABB_ACS480;
+	fbmdrive : FB_VFD_Mdriver;
+	fbSiemen	: FB_VFD_V20_Siemens;
+	fb_ipro	: FB_IPRO_ModbusRTU;
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <LineIds Name="MAIN">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

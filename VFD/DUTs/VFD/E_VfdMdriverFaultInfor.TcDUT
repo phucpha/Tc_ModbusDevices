@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_VfdMdriverFaultInfor" Id="{0d0ebd35-da87-4771-8258-dd1f8d217a90}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+//{attribute 'strict'}
+TYPE E_VfdMdriverFaultInfor :
+(
+	Nofault := 0,
+	Reserved	:= 1,
+	AccelerationOverCurrent := 2,
+	Decelerationovercurrent :=3,
+	ConstantSpeedOverCurrent :=4,
+	AccelerationOverVoltage :=5,
+	DecelerationOverVoltage :=6,
+	ConstantSpeedOverVoltage := 7, 
+	BufferResistorOverloadFault := 8, 
+	UnderVoltageFault	:= 9,
+	InverterOverload	:= 10,
+	Motoroverload		:=16#000B,
+	Inputphaselose :=16#000C,
+	Outputphaselose :=16#000D,
+	Moduleoverheating :=16#000E,
+	Externalfault :=16#000F,
+	Communicationfault :=16#0010,
+	Contactorfault :=16#0011,
+	Currentdetectionfault :=16#0012,
+	Motortuningfault	:=16#0013,
+	Parameterreadandwritefault :=16#0015,
+	Inverterhardwarefault :=16#0016,
+	Motorgroundshortcircuitfault :=16#0017,
+	Runningtimearrival :=16#001A ,
+	Powerontimerrival :=16#001D,
+	loadoff := 16#001E,
+	PIDfeedbacklostduringoperation :=16#001F,
+	FastCurrentlimittimeoutfault :=16#0028,
+	Switchingmotorfaultduringoperation :=16#0029,
+	ExcessivespeedDeviation :=16#002A
+)	UINT := Nofault;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

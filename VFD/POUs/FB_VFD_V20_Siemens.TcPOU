@@ -1,0 +1,218 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_VFD_V20_Siemens" Id="{9df0b7e4-fc36-4d77-842a-f4d43e2fb1d6}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_VFD_V20_Siemens EXTENDS FB_UniversalVFDModbus
+VAR			
+	// status word
+	Inverter_Ready		: BOOL;
+	InverterReadyToRun	: BOOL;
+	InverterRunning		: BOOL;
+	InverterFaultActive : BOOL;
+	OFF2_active			: BOOL;
+	OFF3_active			: BOOL;
+	ON_inhibit_active 	 : BOOL;
+	Inverter_warning_active : BOOL;
+	Deviation_setpoint_OR_ActiveValue : BOOL;
+	PZD_control 		: BOOL;
+	Motor_current_Or_torque_limit  : BOOL;
+	Brake_open	 : BOOL;
+	Motor_overload : BOOL;
+	Motor_RunRight	: BOOL;
+	Inverter_overload :BOOL; 
+	//mode
+	///  actual  Speed ( rpm) (unit A : Scale factor 1), Current ( A , 100, , Torque (Nm, 100)
+	//, Actual Power (kw, 100), Total Kwh( 1), Dc bus Voltage(1), REFERENCE( hz, 100), RATED PWR( 100),OUTPUT VOLTS(1)
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[SUPER^();]]></ST>
+    </Implementation>
+    <Method Name="Convert" Id="{beeee062-daa5-4886-9582-6dec87db0947}">
+      <Declaration><![CDATA[METHOD Convert : BOOL
+VAR_INPUT
+	iRegionNo	:	INT;
+	pReadData	:	POINTER TO word;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE iRegionNo OF
+	0:
+		// Status word
+		Inverter_Ready		:=  pReadData[0].0;
+		InverterReadyToRun	:=  pReadData[0].1;
+		InverterRunning		:=  pReadData[0].2;
+		InverterFaultActive :=  pReadData[0].3;
+		OFF2_active			:= NOT pReadData[0].4;
+		OFF3_active			:= NOT  pReadData[0].5;
+		ON_inhibit_active 	 := pReadData[0].6;
+		Inverter_warning_active := pReadData[0].7;
+		Deviation_setpoint_OR_ActiveValue := NOT pReadData[0].8;
+		PZD_control 		:= pReadData[0].9;
+		Motor_current_Or_torque_limit  := NOT pReadData[0].11;
+		Brake_open	 := pReadData[0].12;
+		Motor_overload := NOT pReadData[0].13;
+		Motor_RunRight	:= pReadData[0].14;
+		Inverter_overload :=  NOT pReadData[0].15;
+		
+		IF eVfdState = VFD_INITIALIZING AND Inverter_Ready THEN
+			eVfdStatus := VFD_STATUS_READY_TO_RUN;
+		ELSIF InverterFaultActive THEN
+			eVfdStatus := VFD_STATUS_FAULT;
+//		ELSIF InverterFaultActive THEN
+//			eVfdStatus := VFD_STATUS_WARNING;
+		ELSIF InverterRunning THEN
+			IF Motor_RunRight THEN
+				eVfdStatus := VFD_STATUS_RUNNING_FORWARD;
+			ELSE
+				eVfdStatus := VFD_STATUS_RUNNING_REVERSE;
+			END_IF
+		ELSIF NOT InverterRunning THEN
+			eVfdStatus := VFD_STATUS_STOP;
+		END_IF
+
+		// Speed word
+		lrHzactual := WORD_TO_LREAL( pReadData[1])*50/16383;
+		
+	1:
+		///  actual  Speed ( rpm) (unit A : Scale factor 1), Current ( A , 100, , Torque (Nm, 100)
+	//, Actual Power (kw, 100), Total Kwh( 1), Dc bus Voltage(1), REFERENCE( hz, 100), RATED PWR( 100),OUTPUT VOLTS(1)
+		lrSpeed := pReadData[0];
+		lrCurrent := WORD_TO_LREAL(pReadData[1])/100;
+		lrTorque := WORD_TO_LREAL(pReadData[2])/100;
+		lrPowerKw := WORD_TO_LREAL(pReadData[3])/100;
+		lrTotalKwh := WORD_TO_LREAL(pReadData[4]);
+		lrDcVoltage := WORD_TO_LREAL(pReadData[5]);
+		lrRatedPower := WORD_TO_LREAL(pReadData[7])/100;
+		lrVACOutToMotor := WORD_TO_LREAL(pReadData[8]);
+END_CASE
+	]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="FirstCycle" Id="{d70c2ced-c572-48de-af56-e1271c4ff897}">
+      <Declaration><![CDATA[METHOD  FirstCycle 
+VAR_INPUT
+	sName : STRING;
+	iUnitID : BYTE ; // modbus address of the device : 1- 255
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.sName := sName;
+THIS^.iUnitID := iUnitID;
+VFD_CTRL_STOP_FREE		:= 2#010001111010; // casue fault , reset error to run again	
+VFD_CTRL_RUN_FORWARD	:= 2#010001111111;	
+VFD_CTRL_RUN_REVERSE	 := 2#110001111111;	
+VFD_CTRL_STOP_SPEED_DOWN := 2#010001111110;
+VFD_CTRL_RESET_FAULT	 := 2#010011111110;
+(*HSW (speed setpoint), HIW (actual speed), STW (control word), ZSW (status word) refer to
+control data. For more information, see parameters r2018 and P2019 in Chapter "Parameter
+list (Page 147)*)
+
+//ZSW  (status WORD), HIW (actual speed)
+	arrAddressRead[0][0] := 109;
+	arrAddressRead[0][1] := 2;
+	arrAddressRead[0][2] := E_ModbusFunction.ReadHoldingRegisters;
+///  actual  Speed ( rpm) (unit A : Scale factor 1), Current ( A , 100, , Torque (Nm, 100)
+	//, Actual Power (kw, 100), Total Kwh( 1), Dc bus Voltage(1), REFERENCE( hz, 100), RATED PWR( 100),OUTPUT VOLTS(1)
+	arrAddressRead[1][0] := 24;
+	arrAddressRead[1][1] := 10;
+	arrAddressRead[1][2] := E_ModbusFunction.ReadHoldingRegisters;
+	
+iNumAddRegionRead	:= 2;
+/////write control  VFD
+// Control word																	
+arrAddressWrite[iCTRL_WORD][0]	:= 99;
+arrAddressWrite[iCTRL_WORD][1]  := 1;
+arrAddressWrite[iCTRL_WORD][2]	:= 1150; //VFD_CTRL_STOP_SPEED_DOWN
+arrAddressWrite[iCTRL_WORD][10]	:= E_ModbusFunction.WriteSingleRegister;	
+// Frequency
+arrAddressWrite[iCTRL_FREQUENCY_WORD][0]	:= 100;
+arrAddressWrite[iCTRL_FREQUENCY_WORD][1] 	:= 1;
+arrAddressWrite[iCTRL_FREQUENCY_WORD][2]	:= LREAL_TO_WORD( FC_ScaleValue(	rangeRawMin := 0,
+																				rangeRawMax := 50,
+																				RangeScaleMin :=0,
+																				RangeScaleMax := 16384,
+																				ValueRaw := lrHzControl)
+															 );
+arrAddressWrite[iCTRL_FREQUENCY_WORD][10]	:= E_ModbusFunction.WriteSingleRegister;												
+iNumAddRegionWrite := 2;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Aborting" Id="{d7fbf362-ab7a-4080-818d-233364e606c1}">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Aborting]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[arrAddressWrite[iCTRL_WORD][2] := VFD_CTRL_STOP_FREE;
+SUPER^.MS_Aborting();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_RunForward" Id="{1d2da06d-db5b-4b7f-b33a-a065f0b01ec8}">
+      <Declaration><![CDATA[METHOD PROTECTED  MS_RunForward
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[arrAddressWrite[iCTRL_FREQUENCY_WORD][2] :=  LREAL_TO_WORD( FC_ScaleValue(	rangeRawMin := 0,
+																			rangeRawMax := 50,
+																			RangeScaleMin :=0,
+																			RangeScaleMax := 16384,
+																			ValueRaw := lrHzControl) );
+SUPER^.MS_RunForward();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_RunReverse" Id="{e4fd9a70-c6ed-40b4-ac4f-7501a54d43e8}">
+      <Declaration><![CDATA[METHOD PROTECTED  MS_RunReverse
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[arrAddressWrite[iCTRL_FREQUENCY_WORD][2] :=  LREAL_TO_WORD( FC_ScaleValue(	rangeRawMin := 0,
+																			rangeRawMax := 50,
+																			RangeScaleMin :=0,
+																			RangeScaleMax := 16384,
+																			ValueRaw := lrHzControl) );
+super^.MS_RunReverse();]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_VFD_V20_Siemens">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_VFD_V20_Siemens.Convert">
+      <LineId Id="8" Count="18" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="73" Count="1" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="31" Count="24" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_VFD_V20_Siemens.FirstCycle">
+      <LineId Id="8" Count="1" />
+      <LineId Id="68" Count="3" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="10" Count="2" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="13" Count="11" />
+      <LineId Id="35" Count="3" />
+      <LineId Id="25" Count="1" />
+      <LineId Id="28" Count="5" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_VFD_V20_Siemens.MS_Aborting">
+      <LineId Id="3" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_VFD_V20_Siemens.MS_RunForward">
+      <LineId Id="6" Count="3" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="11" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_VFD_V20_Siemens.MS_RunReverse">
+      <LineId Id="6" Count="3" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="11" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

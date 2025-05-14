@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_IPro_PositionCmdModeSelection" Id="{3cea1db9-6807-42ac-bb77-22f119f2da72}">
+    <Declaration><![CDATA[{attribute 'strict'}
+TYPE E_IPro_PositionCmdModeSelection :
+(
+	IPRO_INCREMENTAL := 0,
+	IPRO_ABSOLUTE	:= 1
+) UINT := IPRO_ABSOLUTE;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

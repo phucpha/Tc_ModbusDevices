@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="PGR_Test" Id="{84d485d7-dc6d-4f01-863b-381f548c2345}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM PGR_Test
+VAR
+	fbUniversalVfdModbusTest : FB_UniversalVFDModbus_Test;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[TcUnit.RUN();]]></ST>
+    </Implementation>
+    <LineIds Name="PGR_Test">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
