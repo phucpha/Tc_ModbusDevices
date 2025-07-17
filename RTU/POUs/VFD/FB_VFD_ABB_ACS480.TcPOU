@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
-  <POU Name="FB_VFD_ABB_ACS480" Id="{6aa2ea18-dd89-4164-9c3d-f5d9fe47a707}" SpecialFunc="None">
+  <POU Name="FB_VFD_ABB_ACS480" Id="{96595415-751d-464c-bab2-749904d5515d}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_VFD_ABB_ACS480 EXTENDS FB_UniversalVFDModbus
 
 VAR
@@ -11,7 +11,7 @@ END_VAR
     <Implementation>
       <ST><![CDATA[SUPER^();]]></ST>
     </Implementation>
-    <Method Name="Convert" Id="{e7c03c2d-bed3-4696-9e25-058c9a908e4f}">
+    <Method Name="Convert" Id="{38687b8c-f3a1-4fab-8feb-ea3ee5eed31d}">
       <Declaration><![CDATA[METHOD Convert : BOOL
 VAR_INPUT
 	iRegionNo	:	INT;
@@ -71,7 +71,7 @@ END_VAR
 END_CASE]]></ST>
       </Implementation>
     </Method>
-    <Method Name="FirstCycle" Id="{9c6012ba-0897-4553-a035-a16ab2eb91cf}">
+    <Method Name="FirstCycle" Id="{3ae3af73-66a5-4fe8-bb9c-cf2fccd9f358}">
       <Declaration><![CDATA[METHOD  FirstCycle 
 VAR_INPUT
 	sName : STRING;
@@ -122,7 +122,7 @@ arrAddressWrite[iCTRL_WORD][10]	:= E_ModbusFunction.WriteMultipleRegisters;
 //arrAddressWrite[iCTRL_FREQUENCY_WORD][0]	:= 1;
 //arrAddressWrite[iCTRL_FREQUENCY_WORD][1]	:= 1;
 							(*MUST BE CARE FULL WHEN USE FLOATING POINT CONVERT*)
-arrAddressWrite[iCTRL_FREQUENCY_WORD][3]	:= LREAL_TO_WORD( FC_ScaleValue(	rangeRawMin := 0,
+arrAddressWrite[iCTRL_FREQUENCY_WORD][3]	:= LREAL_TO_WORD( F_ScaleValue(	rangeRawMin := 0,
 																				rangeRawMax := 50,
 																				RangeScaleMin :=0,
 																				RangeScaleMax := 20000,
@@ -134,21 +134,21 @@ iNumAddRegionWrite := 1;// use ctrol word and frequency in 1 modbus write
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_Aborting" Id="{1153108d-be3e-4ace-a85c-20381c819130}">
+    <Method Name="MS_Aborting" Id="{4b3b5df2-b4fb-4af1-b70d-bb31381aceb2}">
       <Declaration><![CDATA[METHOD PROTECTED  MS_Aborting]]></Declaration>
       <Implementation>
         <ST><![CDATA[arrAddressWrite[iCTRL_WORD][2]	:= VFD_CTRL_STOP_FREE;
 SUPER^.MS_Aborting();]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_Initializing" Id="{ab37f1f5-94e2-4589-8a3c-01bf5c976d67}">
+    <Method Name="MS_Initializing" Id="{e68f7a5b-7f0f-475c-b606-f65058277e1e}">
       <Declaration><![CDATA[METHOD  PROTECTED  MS_Initializing
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[SUPER^.MS_Initializing();]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_RunForward" Id="{6e9a1628-244c-4e7a-8cb8-78c257d44701}">
+    <Method Name="MS_RunForward" Id="{dfb441b6-3fe3-4262-9d67-6a331974a3c0}">
       <Declaration><![CDATA[METHOD PROTECTED  MS_RunForward
 VAR_INPUT
 END_VAR
@@ -156,7 +156,7 @@ END_VAR
       <Implementation>
         <ST><![CDATA[// use ctrol word and frequency in 1 modbus write WRITE MULTIES REGIS
 arrAddressWrite[iCTRL_WORD][3] :=  LREAL_TO_WORD( 
-															FC_ScaleValue(	rangeRawMin := 0,
+															F_ScaleValue(	rangeRawMin := 0,
 																			rangeRawMax := 50,
 																			RangeScaleMin := 0,
 																			RangeScaleMax := 20000,
@@ -165,7 +165,7 @@ arrAddressWrite[iCTRL_WORD][3] :=  LREAL_TO_WORD(
 SUPER^.MS_RunForward();]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_RunReverse" Id="{8b2a447d-5e52-4025-88db-623fb12ab327}">
+    <Method Name="MS_RunReverse" Id="{9c92e45f-7e6a-4daa-961b-df03857394f0}">
       <Declaration><![CDATA[METHOD PROTECTED  MS_RunReverse
 VAR_INPUT
 END_VAR
@@ -173,7 +173,7 @@ END_VAR
       <Implementation>
         <ST><![CDATA[// use ctrol word and frequency in 1 modbus write WRITE MULTIES REGIS
 arrAddressWrite[iCTRL_WORD][3] :=  LREAL_TO_WORD( 
-															FC_ScaleValue(	rangeRawMin := 0,
+															F_ScaleValue(	rangeRawMin := 0,
 																			rangeRawMax := 50,
 																			RangeScaleMin := 0,
 																			RangeScaleMax := 20000,

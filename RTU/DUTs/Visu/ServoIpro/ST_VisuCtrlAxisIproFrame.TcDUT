@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_VisuCtrlAxisIproFrame" Id="{4e2d6050-9043-4987-aabc-9a84107afd62}">
+    <Declaration><![CDATA[TYPE ST_VisuCtrlAxisIproFrame:
+STRUCT
+	sName							: STRING;
+	btnInit 						: BOOL;						(*  *)
+	btnAbort 						: BOOL;						(*  *)
+	btnReset						: BOOL;						(*  *)
+	btnHome 						: BOOL;						(*  *)
+	btnStop							: BOOL;						(*  *)
+	btnMoveAbsolute 				: BOOL;						(*  *)
+	btnMoveTorque 					: BOOL;						(*  *)
+	                    			
+	bEnable							: BOOL;						(*  *)
+	bControlModeSwitchCmd 			: BOOL;						(*  *)	
+	lrPositionCmd					: LREAL;					(*  *)
+	lrPositionModeSelectionCmd		: LREAL;					(*  *)
+	lrSpeedCmd						: LREAL;					(*  *)
+	lrTorqueCmd						: LREAL;					(*  *)
+	                        		
+	lrSetPosition					: LREAL;
+	lrSetHome						: LREAL;
+	lrSetTorque						: LREAL;
+	                    			                      		
+	eControlMode					: E_IProCtrlMode;
+	eCurrentMode					: E_IProCurrentMode;
+	bError							: BOOL;
+	iErrorID						: INT;
+	lrPositionFeedBack				: LREAL;
+	ePositionModeSelectionFeedback	: E_IPro_PositionCmdModeSelection;
+	lrSpeedFeedback					: LREAL;
+	eStatus							: E_IProStatus;
+	sStatus							: STRING;
+	eState							: E_IPro_State;
+	sState							: STRING;
+	lrTorqueFeedback				: LREAL;
+		
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,78 +1,53 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
-  <POU Name="FB_IPRO_ModbusRTU" Id="{874a2b69-2134-44dd-be6c-0841034c791a}" SpecialFunc="None">
+  <POU Name="FB_IPRO_ModbusRTU" Id="{779a38f8-03a4-4a78-bdd8-18318bba4a44}" SpecialFunc="None">
     <Declaration><![CDATA[(* this FB violate Encapsulation of OOP because it still Developing and test to understand how this device work
 -------------------------read the document bellow---------------------------------------------------------------*)
-FUNCTION_BLOCK FB_IPRO_ModbusRTU EXTENDS FB_ModbusSlave IMPLEMENTS I_Ipro_MotorPower;
-VAR_INPUT
-END_VAR
-VAR_OUTPUT
-END_VAR
+FUNCTION_BLOCK FB_IPRO_ModbusRTU EXTENDS FB_ModbusSlaveRtu IMPLEMENTS I_Ipro_MotorPower;
 VAR
 	eState : E_IPro_State;
-	// bit  read and write modbus 
-	bControlModeSwitchCommand	: BOOL;// write p4.15
-	bFieldbusEnableServoCommand	:  BOOL;// write p4.11 // anable or disable
-	eControlMode				: E_IProCtrlMode;
+// Write Modbus
+	bControlModeSwitchCommand	: BOOL;						(* write p4.15 *)
+	bFieldbusEnableServoCommand	:  BOOL;					(* write p4.11 0:Disable, 1:Anable *)
+	eControlMode : E_IProCtrlMode;
 	lrPositivePositionSoftwareLimit : LREAL;
 	lrNagativePositionSoftwareLimit	: LREAL;
-	//bClearAbsEncoderMultiturn		: BOOL; should be just config by driver soft
-	// dont change value in lrMaxSpeedLimitOfControlModeSwitch
-	lrMaxSpeedLimitOfControlModeSwitch	: LREAL := 100;// speed in position mode 	//P0.90// 1180 (*Set the max. running speed during positioning when switching from speed mode or torque mode to position mode under position/speed, position/torque compound mode.*)
-	lrPositionCmd					: LREAL;// p4.12 // reference unit // 10000 / rotary
-	lrSpeedCmd						: LREAL;// p4.13r/ minute
-	lrTorqueCmd						: LREAL; //p4.14 // %
-	lrMaxSpeed						: LREAL; // 10x r/ min p4.31 // r/ minute
-	lrMaxTorque						: LREAL; // p0.10 % 
-	bEmergenCyStop					: BOOL;// 4.23, 1846/ 16 bit //If P4.10 is 1, this parameter can be used to set emergency stop command.
-	ePositionCmdModeSelection		: E_IPro_PositionCmdModeSelection;//  not send , it set by ipro soft
-	// Read modbus
-	lrSpeedFeedback					: LREAL;	// r0.00
-	lrTorqueFeedback				: LREAL;	// r0.06
-	lrPositionFeedback				: LREAL;// r0.02
-	nFaultCode						: INT; // r0.99
-	eSystemStatus					: E_IProStatus; // r0.30
-	eCurrentMode					: E_IProCurrentMode ;// r0.32 0: Position mode
-											// 1: speed mode
-											// 2: torque Mode
-	ePositionCmdModeSelectionFeedback		: E_IPro_PositionCmdModeSelection;// check if ePositionCmdModeSelection is success write
-	// Break ctrol DO
-	fbBreakCtrl						: FB_DigitalOutput;									
-	(* Generic *)
-	//bFirstCycle				: BOOL := TRUE;					(* First cycle bit *)
-	sUnit 					: STRING;						(* Measurement units *)
+	lrMaxSpeedLimitOfControlModeSwitch : LREAL := 100;		(* P0.90 Add:1180 :Set the max. running speed during positioning when switching from speed mode or torque mode to position mode under position/speed, position/torque compound mode.*)
+	lrPositionCmd : LREAL;									(* p4.12 Position value unit:(10000/rotary) *)
+	lrSpeedCmd : LREAL;										(* p4.13 Unit:(rotary/minute) *)
+	lrTorqueCmd	: LREAL; 									(* p4.14 Unit:% *)
+	lrMaxSpeed	: LREAL; 									(* p4.31 Unit:(rotary/minute) *)
+	lrMaxTorque	: LREAL; 									(* p0.10 Unit:% *) 
+	bEmergenCyStop : BOOL;									(* p4.23 add:1846 16 bit :If P4.10 is 1, this parameter can be used to set emergency stop command. *)
+	
+// Read modbus
+	lrSpeedFeedback	: LREAL;								(* r0.00 *) 
+	lrTorqueFeedback : LREAL;								(* r0.06 *)
+	lrPositionFeedback : LREAL;								(* r0.02 *)
+	nFaultCode : INT; 										(* r0.99 *)
+	eSystemStatus : E_IProStatus; 							(* r0.30 *)
+	eCurrentMode : E_IProCurrentMode ;						(* r0.32 0: Position mode, 1: speed mode, 2: torque Mode*) 
+							
 	TempData_Word2real : U_Word2Real;
 	TempData_Word2Dint	: U_Word2Dint;
 	TempData_Word2Int	: U_Word2Int;
 
+// State Handing
 	bInit: BOOL;
 	bHome: BOOL;
 	bBusy: BOOL;
 	bMoveAbsolute: BOOL;
 	bReset: BOOL;
 	bMoveTorque: BOOL;
-	// StopDone
-	bStopped: BOOL;
-	// StopRequest
-	bStop: BOOL;
+	bStopped: BOOL; 						// StopDone
+	bStop: BOOL;							// StopRequest
 	lrHomePosition: LREAL;
-	// home done
-	bHomed: BOOL;
-	// Init Done
-	bInited: BOOL;
-	// MoveAbs Done
-	bMoveAbsoluted: BOOL;
-	// MoveTorque Done
-	bMoveTorqued: BOOL;
-	// Abort Request
-	bAbort: BOOL;
-	bError: BOOL;
+	bHomed: BOOL;							// home done
+	bInited: BOOL;							// Init Done
+	bMoveAbsoluted: BOOL;					// MoveAbs Done
+	bMoveTorqued: BOOL;						// MoveTorque Done
+	bAbort: BOOL;							// Abort Request
 	bActive: BOOL;
-	bReallyError	: BOOL;// because of bError maybe incorrect because noise information return by Modbus
-	tonConfirmReallyError : TON;
-	timeConfirmReallyError : TIME := T#15S;
-	lrPositivePositionLimit : LREAL;
-	lrNagativePositionLimit : LREAL;
 END_VAR
 
 (*-------------------Document-------------
@@ -85,27 +60,26 @@ END_VAR
     <Implementation>
       <ST><![CDATA[bActive := eState >= IPRO_READY_INITIALIZED;
 StateMachine();
-
-bError := nFaultCode <> 0
-		OR iModbusErrorID <> MODBUSERROR_NO_ERROR;
+bError := nFaultCode <> 0;
+SUPER^();
 CASE eState OF
 	IPRO_INITIALIZING..IPRO_RESET_DONE, IPRO_ABORTING:
 		tonConfirmReallyError(
-			IN := bError,
+			IN := bError OR bModbusError,
 			PT := timeConfirmReallyError,
 			Q => bReallyError 
 		);
 END_CASE]]></ST>
     </Implementation>
-    <Folder Name="Parameters" Id="{fd574196-30d7-4a6d-ba05-c571915bc99f}" />
-    <Folder Name="parent" Id="{b3afeab3-9586-4c70-94f5-160380082080}" />
-    <Folder Name="Requests" Id="{534b8122-a015-4514-b6ba-6598e4bad4e5}" />
-    <Folder Name="SetBeforInit" Id="{3a0038d3-adc2-4de3-9bb9-6b1b11546935}" />
-    <Folder Name="StateMachine" Id="{89ce2174-3c6b-4ac3-ac1c-17369794613a}" />
-    <Folder Name="Status" Id="{8021216a-3e71-4c0f-a4c6-c6848f7707a7}" />
-    <Property Name="Active" Id="{da715c6f-56a5-436b-880b-e50a3fedfeb2}" FolderPath="Status\">
+    <Folder Name="Parameters" Id="{135f1342-f3ac-470e-b188-26cd0d7b27c7}" />
+    <Folder Name="parent" Id="{6b07bf69-3a52-4263-9762-d97c1b99a02c}" />
+    <Folder Name="Requests" Id="{fab6c147-feaf-4bd7-9ed7-49433b01dc12}" />
+    <Folder Name="SetBeforInit" Id="{f9ae4f66-d74b-40ad-8929-ca4d65a2caf5}" />
+    <Folder Name="StateMachine" Id="{bc03708e-6405-480e-aa24-527bc8f89ef2}" />
+    <Folder Name="Status" Id="{40a08b4a-5fb9-44d8-be2c-031269a557ba}" />
+    <Property Name="Active" Id="{b4a9866b-0d33-4922-95c7-beca9bac3388}" FolderPath="Status\">
       <Declaration><![CDATA[PROPERTY Active : bool]]></Declaration>
-      <Get Name="Get" Id="{4b61fdaf-b3f3-4748-a868-0e1de5a03c14}">
+      <Get Name="Get" Id="{78e8bb07-e221-4b68-8e28-09652440fb31}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -115,10 +89,10 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Property Name="Busy" Id="{b870518e-692f-4dae-ae6f-651e74bd1292}" FolderPath="Status\">
+    <Property Name="Busy" Id="{04fd7b58-cd07-4eba-8564-70318006a4ac}" FolderPath="Status\">
       <Declaration><![CDATA[{attribute 'monitoring' := 'variable'}
 PROPERTY Busy : bool]]></Declaration>
-      <Get Name="Get" Id="{a44f2158-41ee-4e53-9a45-8f1832ace844}">
+      <Get Name="Get" Id="{4c84cee3-c2c5-4fe5-9f67-ec059c453e7a}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -127,9 +101,9 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Property Name="ControlMode" Id="{300069a9-d7b0-4caa-a687-2826f72f3930}" FolderPath="SetBeforInit\">
+    <Property Name="ControlMode" Id="{82f3a655-7191-41d9-b3e9-013c4502fd03}" FolderPath="SetBeforInit\">
       <Declaration><![CDATA[PROPERTY ControlMode : E_IProCtrlMode]]></Declaration>
-      <Get Name="Get" Id="{deed9c3d-7bcd-455a-b6e3-7e24cbde43f4}">
+      <Get Name="Get" Id="{f24d0a22-b23c-4e93-b024-b2cd29a0591e}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -137,7 +111,7 @@ END_VAR
           <ST><![CDATA[]]></ST>
         </Implementation>
       </Get>
-      <Set Name="Set" Id="{f45dad2d-ba0f-4d7e-9066-68b634fc98e2}">
+      <Set Name="Set" Id="{fac56fc0-c696-47ae-b960-e57bcfe47507}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -150,9 +124,9 @@ END_IF
         </Implementation>
       </Set>
     </Property>
-    <Property Name="ControlModeSwitchCmd" Id="{960e9cdf-8a11-4d26-b5f2-05df8629e903}" FolderPath="Parameters\">
+    <Property Name="ControlModeSwitchCmd" Id="{a97f4de7-79f1-4a8b-aeb0-fb6d46c8368c}" FolderPath="Parameters\">
       <Declaration><![CDATA[PROPERTY ControlModeSwitchCmd : bool]]></Declaration>
-      <Get Name="Get" Id="{8b0a4cec-90e6-4ab1-9f3d-2ddca3d97466}">
+      <Get Name="Get" Id="{fa8c8626-2fdf-4d50-9d7b-b003da3c03a4}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -161,7 +135,7 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Method Name="Convert" Id="{5229310c-f0e9-4541-b1d0-70eaae1b186b}" FolderPath="parent\">
+    <Method Name="Convert" Id="{a0f2c8db-6069-46f2-b7e6-10beb6b999d1}" FolderPath="parent\">
       <Declaration><![CDATA[METHOD Convert : BOOL
 VAR_INPUT
 	iRegionNo	:	INT;
@@ -199,9 +173,9 @@ END_CASE
 ]]></ST>
       </Implementation>
     </Method>
-    <Property Name="CurrentMode" Id="{6dd03409-ead4-47c8-8588-13aff1639984}" FolderPath="Status\">
+    <Property Name="CurrentMode" Id="{d11bf5fa-8718-44ad-8a77-3f70675bc099}" FolderPath="Status\">
       <Declaration><![CDATA[PROPERTY CurrentMode : E_IProCurrentMode]]></Declaration>
-      <Get Name="Get" Id="{bc1e0586-8b3b-48ce-9e2e-2199f6a5eb02}">
+      <Get Name="Get" Id="{0142fdff-63a5-4bb1-b024-753ebd04f18c}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -210,9 +184,9 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Property Name="Enable" Id="{1365edc7-3e08-4fee-8802-0ae2002da158}" FolderPath="Parameters\">
+    <Property Name="Enable" Id="{855be6cb-afa6-4670-b51a-ed92bd24485e}" FolderPath="Parameters\">
       <Declaration><![CDATA[PROPERTY Enable : bool]]></Declaration>
-      <Get Name="Get" Id="{e9f83e13-690c-42d4-88f3-4ef4fd7dfb67}">
+      <Get Name="Get" Id="{1487b77a-cc23-4513-8843-d56b811200cd}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -221,21 +195,10 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Property Name="Error" Id="{7c316110-9e2b-4838-bdbd-c4906b381b86}" FolderPath="Status\">
-      <Declaration><![CDATA[PROPERTY Error : bool]]></Declaration>
-      <Get Name="Get" Id="{d89c151c-524a-45ce-8a15-a0d0b732b782}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[Error := bError;]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
-    <Property Name="ErrorID" Id="{67a39bd6-4f1a-4f09-b142-67663bdd3736}" FolderPath="Status\">
+    <Property Name="ErrorID" Id="{0b249e37-0a65-4ec1-a1e6-71c97f90b6db}" FolderPath="Status\">
       <Declaration><![CDATA[PROPERTY ErrorID : REFERENCE TO INT
 ]]></Declaration>
-      <Get Name="Get" Id="{d2519f2f-fe27-4968-a33c-c1a43da0071c}">
+      <Get Name="Get" Id="{0e3d4b6a-993d-4a39-b37f-82be1b4cd517}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -244,131 +207,10 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Method Name="FirstCycle" Id="{0678e921-569f-4883-85a5-c1bde9f68215}" FolderPath="parent\">
-      <Declaration><![CDATA[//Call after Call firstCycleEx
-METHOD  FirstCycle // must be call 1 time
-VAR_INPUT
-	sName : STRING;
-	iUnitID : BYTE ; // modbus address of the device : 1- 255
-END_VAR
-
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[THIS^.sName := sName;
-THIS^.iUnitID := iUnitID;
-
-	arrAddressRead[0][0] := 4000;// motor speed FB //0.1 r/min // 4000, 4001
-	arrAddressRead[0][1]	:= 2;
-	arrAddressRead[0][2] := E_ModbusFunction.ReadHoldingRegisters;
-	
-	arrAddressRead[1][0] := 4004;// motor position FB// reference unit 
-	arrAddressRead[1][1]	:= 4;
-	arrAddressRead[1][2] := E_ModbusFunction.ReadHoldingRegisters;
-	
-	arrAddressRead[2][0] := 4016;// motor Torque FB// reference unit 
-	arrAddressRead[2][1]	:= 1;
-	arrAddressRead[2][2] := E_ModbusFunction.ReadHoldingRegisters;
-	
-	arrAddressRead[3][0] := 4064;// System status // 
-	arrAddressRead[3][1]	:= 1;
-	arrAddressRead[3][2] := E_ModbusFunction.ReadHoldingRegisters;
-	
-	arrAddressRead[4][0] := 4068;// Current Mode 
-	arrAddressRead[4][1]	:= 1;
-	arrAddressRead[4][2] := E_ModbusFunction.ReadHoldingRegisters;
-	
-	arrAddressRead[5][0] := 4198;// FaultCode
-	arrAddressRead[5][1]	:= 1;
-	arrAddressRead[5][2] := E_ModbusFunction.ReadHoldingRegisters;	
-	iNumAddRegionRead := 6;
-// write
-	arrAddressWrite[0][0] := 1830;// 
-	arrAddressWrite[0][1] := 1;
-	arrAddressWrite[0][2] := BOOL_TO_WORD(bControlModeSwitchCommand); // disable first
-	arrAddressWrite[0][10]	:= E_ModbusFunction.WriteSingleRegister;
-	
-	arrAddressWrite[1][0] := 1822;// 
-	arrAddressWrite[1][1] := 1;
-	arrAddressWrite[1][2] :=  BOOL_TO_WORD(bFieldbusEnableServoCommand); // disable first
-	arrAddressWrite[1][10]	:= E_ModbusFunction.WriteSingleRegister;
-	
-	arrAddressWrite[2][0] := 1006;// 
-	arrAddressWrite[2][1] := 1;
-	arrAddressWrite[2][2] := eControlMode; 
-	arrAddressWrite[2][10]	:= E_ModbusFunction.WriteSingleRegister;
-	
-	arrAddressWrite[3][0] := 1070;//  //32 bit 1070, 1071
-	arrAddressWrite[3][1] := 2;
-	TempData_Word2Dint.idInt := LREAL_TO_DINT(lrPositivePositionLimit);
-	arrAddressWrite[3][2] := TempData_Word2Dint.iWord[0];
-	arrAddressWrite[3][3] := TempData_Word2Dint.iWord[1];
-	arrAddressWrite[3][10]	:= E_ModbusFunction.WriteMultipleRegisters;
-	
-	arrAddressWrite[4][0] := 1072;//  //32 bit 1072, 1073
-	arrAddressWrite[4][1] := 2;
-	TempData_Word2Dint.idInt := LREAL_TO_DINT(lrNagativePositionLimit);
-	arrAddressWrite[4][2] := TempData_Word2Dint.iWord[0];
-	arrAddressWrite[4][3] := TempData_Word2Dint.iWord[1];
-	arrAddressWrite[4][10]	:= E_ModbusFunction.WriteMultipleRegisters;
-	
-	arrAddressWrite[5][0] := 1180;// 
-	arrAddressWrite[5][1] := 1;
-	arrAddressWrite[5][2] :=  LREAL_TO_WORD(lrMaxSpeedLimitOfControlModeSwitch); 
-	arrAddressWrite[5][10]	:= E_ModbusFunction.WriteSingleRegister;
-	
-	arrAddressWrite[6][0] := 1824;// 32 bit 1825
-	arrAddressWrite[6][1] := 2;
-	TempData_Word2Dint.idInt := LREAL_TO_DINT(lrPositionCmd);
-	arrAddressWrite[6][2] := TempData_Word2Dint.iWord[0];
-	arrAddressWrite[6][3] := TempData_Word2Dint.iWord[1];
-	arrAddressWrite[6][10]	:= E_ModbusFunction.WriteMultipleRegisters;
-	
-	arrAddressWrite[7][0] := 1826;//16 bit
-	arrAddressWrite[7][1]	:= 1;
-	TempData_Word2Int.iInt := LREAL_TO_INT(lrSpeedCmd);
-	arrAddressWrite[7][2] :=  TempData_Word2Int.iWord;
-	arrAddressWrite[7][10]	:= E_ModbusFunction.WriteSingleRegister;
-
-	arrAddressWrite[8][0] := 1828;// 16 bit
-	arrAddressWrite[8][1]	:= 1;
-	TempData_Word2Int.iInt := LREAL_TO_INT(lrTorqueCmd);
-	arrAddressWrite[8][2] :=  TempData_Word2Int.iWord;
-	arrAddressWrite[8][10]	:= E_ModbusFunction.WriteSingleRegister;
-	
-	arrAddressWrite[9][0] := 1862;// 1
-	arrAddressWrite[9][1]	:= 1;
-	TempData_Word2Int.iInt := LREAL_TO_INT(ABS(lrMaxSpeed));
-	arrAddressWrite[9][2] :=  TempData_Word2Int.iWord;
-	arrAddressWrite[9][10]	:= E_ModbusFunction.WriteSingleRegister;
-	
-	arrAddressWrite[10][0] := 1020;// 32 bit 1825/ //0.1 PERCENT
-	arrAddressWrite[10][1] := 1;
-	arrAddressWrite[10][2] :=  LREAL_TO_WORD(ABS(lrMaxTorque));
-	arrAddressWrite[10][10]	:= E_ModbusFunction.WriteSingleRegister;
-	
-	arrAddressWrite[11][0] := 1846;
-	arrAddressWrite[11][1] := 1;
-	arrAddressWrite[11][2] := BOOL_TO_WORD(THIS^.bEmergenCyStop);
-	arrAddressWrite[11][10]	:= E_ModbusFunction.WriteSingleRegister;
-	iNumAddRegionWrite := 12;]]></ST>
-      </Implementation>
-    </Method>
-    <Method Name="FirstCycleEx" Id="{a3f36535-4278-42c7-a7eb-745d92ddf7a6}" FolderPath="parent\">
-      <Declaration><![CDATA[METHOD FirstCycleEx : BOOL
-VAR_INPUT
-	lrPositivePositionLimit : LREAL;
-	lrNagativePositionLimit : LREAL;
-END_VAR
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[THIS^.lrPositivePositionLimit := lrPositivePositionLimit;
-THIS^.lrNagativePositionLimit := lrNagativePositionLimit;]]></ST>
-      </Implementation>
-    </Method>
-    <Property Name="InPosition" Id="{26afc2b6-70d0-4579-a471-bdddb53dcd96}" FolderPath="Status\">
+    <Property Name="InPosition" Id="{4ad81687-b948-4488-aa5b-2ac52454fe3d}" FolderPath="Status\">
       <Declaration><![CDATA[{attribute 'monitoring' := 'variable'}
 PROPERTY InPosition : bool]]></Declaration>
-      <Get Name="Get" Id="{e88f214f-d779-4d50-802a-5957d9c5ecaf}">
+      <Get Name="Get" Id="{cafeb194-f541-43df-9a96-6fa2f21aa8ce}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -379,9 +221,9 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Property Name="IsHomed" Id="{cd06ef7d-d24f-4ba1-a79a-d4e87ac1749f}" FolderPath="Status\">
+    <Property Name="IsHomed" Id="{25150335-f115-450b-8103-c4c59b87dcd8}" FolderPath="Status\">
       <Declaration><![CDATA[PROPERTY IsHomed : bool]]></Declaration>
-      <Get Name="Get" Id="{46fac66b-3623-4190-8948-169423d723c3}">
+      <Get Name="Get" Id="{2d3d439b-5162-456e-97d7-e2931abe5269}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -392,9 +234,9 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Property Name="IsInTorque" Id="{f9f8b01b-a85a-402e-949e-2f40429b8024}" FolderPath="Status\">
+    <Property Name="IsInTorque" Id="{5cc895c7-6ab9-4745-bbf3-251c0a00b39b}" FolderPath="Status\">
       <Declaration><![CDATA[PROPERTY IsInTorque : bool]]></Declaration>
-      <Get Name="Get" Id="{6de4d41d-350b-4743-a0ab-a4cd33e751a7}">
+      <Get Name="Get" Id="{3e20b4a0-b649-4f36-97c9-bad969a3fe7d}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -405,9 +247,9 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Property Name="IsStop" Id="{03f24d6f-0147-4235-9238-0f026f17fd00}" FolderPath="Status\">
+    <Property Name="IsStop" Id="{721186bc-60dd-4115-8523-deb6a9e576b6}" FolderPath="Status\">
       <Declaration><![CDATA[PROPERTY IsStop : bool // not moving ]]></Declaration>
-      <Get Name="Get" Id="{08f5eb79-c94b-452e-838f-0ae63baf30c6}">
+      <Get Name="Get" Id="{8a4cae79-0c89-49af-94e4-a422fbdbcc15}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -416,9 +258,9 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Property Name="MaxSpeed" Id="{eab31fbe-a73d-42a3-befc-8976940887a2}" FolderPath="SetBeforInit\">
+    <Property Name="MaxSpeed" Id="{efa9fab6-f7e3-406f-adb2-b575f7b68621}" FolderPath="SetBeforInit\">
       <Declaration><![CDATA[PROPERTY MaxSpeed : lreal// large than 0]]></Declaration>
-      <Get Name="Get" Id="{0983c7ac-2ab2-4d9a-9388-16b4404ed669}">
+      <Get Name="Get" Id="{7a42f7f8-ceb6-4e59-88ef-de6a9a2782d1}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -426,7 +268,7 @@ END_VAR
           <ST><![CDATA[MaxSpeed := lrMaxSpeed;]]></ST>
         </Implementation>
       </Get>
-      <Set Name="Set" Id="{00b22e55-46f4-4e2d-9a8d-b906ca0252fa}">
+      <Set Name="Set" Id="{ef5b532c-d4c2-4431-917a-6cd0d488cedb}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -439,9 +281,9 @@ END_IF
         </Implementation>
       </Set>
     </Property>
-    <Property Name="MaxTorque" Id="{bd4f74ed-e2a0-43ac-98bc-7e44f213d2dc}" FolderPath="SetBeforInit\">
+    <Property Name="MaxTorque" Id="{8197c65c-569c-4655-9971-34203364c4a1}" FolderPath="SetBeforInit\">
       <Declaration><![CDATA[PROPERTY MaxTorque : Lreal// // % larger than 0]]></Declaration>
-      <Get Name="Get" Id="{a379dc33-9c6e-4826-a217-df8bea23703d}">
+      <Get Name="Get" Id="{1222d17e-9006-4bc5-910b-dd7509f7de1e}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -449,7 +291,7 @@ END_VAR
           <ST><![CDATA[MaxTorque := lrMaxTorque;]]></ST>
         </Implementation>
       </Get>
-      <Set Name="Set" Id="{cd658257-5a38-4389-8ab7-231cdca56ae4}">
+      <Set Name="Set" Id="{9a3480e6-a1ae-4445-be64-e3d7fd6f3a0c}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -462,21 +304,23 @@ arrAddressWrite[10][2] :=  LREAL_TO_WORD(ABS(lrMaxTorque*10));]]></ST>
         </Implementation>
       </Set>
     </Property>
-    <Method Name="MR_Abort" Id="{ebe71e31-d8c1-4fde-b893-4760976a9a30}" FolderPath="Requests\">
+    <Method Name="MR_Abort" Id="{c01a224b-502a-4fb8-86bb-578474547fce}" FolderPath="Requests\">
       <Declaration><![CDATA[METHOD MR_Abort : BOOL
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF eState >= IPRO_INITIALIZING THEN
 	bAbort := TRUE;
 	MR_Abort := FALSE;
+	bBusy := TRUE;
 	eState := IPRO_ABORTING;
 ELSIF eState = IPRO_UNINITIALIZED THEN
 	bAbort := FALSE;
 	MR_Abort := TRUE;
+	bBusy := False;
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MR_Home" Id="{558fe05c-8994-43c1-89d8-1326a385441e}" FolderPath="Requests\">
+    <Method Name="MR_Home" Id="{0bedcd25-5802-4be5-b446-f54e355f5942}" FolderPath="Requests\">
       <Declaration><![CDATA[METHOD MR_Home : BOOL // control mode must have Position Mode // actually it the same as MOVE absolute 
 VAR_INPUT
 	lrHomePosition : LREAL;
@@ -509,15 +353,10 @@ ELSIF eState = IPRO_HOME_DONE THEN
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MR_Init" Id="{153b02db-b1a5-4d8c-90a7-d381cab0308a}" FolderPath="Requests\">
-      <Declaration><![CDATA[(*this must be called 2 times, first: after set All parram in "SetBefor Init" folder and before run FBModbusMaster
-							 second : after Modbusmster running and state machine in Init state.*)
-METHOD MR_Init : BOOL// need to set control mode carefully, the control mode only work correct if you set p0.03 and restart the driver, and there for if you change control mode cmd during driver power ON, the control mode will not effect
-]]></Declaration>
+    <Method Name="MR_Init" Id="{bdf0da52-3dbd-43dd-b4d0-dd24e17ac0ad}" FolderPath="Requests\">
+      <Declaration><![CDATA[METHOD MR_Init : BOOL]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
-
-IF eState = IPRO_UNINITIALIZED THEN
+        <ST><![CDATA[IF eState = IPRO_UNINITIALIZED THEN
 	bInit := TRUE;
 	bInited := FALSE;
 	bBusy := TRUE;
@@ -532,7 +371,7 @@ ELSIF eState = IPRO_READY_INITIALIZED THEN
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MR_MoveAbsolute" Id="{66c783d0-2d12-4ac7-8a73-56543920c754}" FolderPath="Requests\">
+    <Method Name="MR_MoveAbsolute" Id="{ca744ba7-f549-4cdc-bd1f-573625e34a4f}" FolderPath="Requests\">
       <Declaration><![CDATA[METHOD MR_MoveAbsolute : BOOL // control mode must have Position Mode
 VAR_INPUT
 	lrAbsolutePosition : LREAL;
@@ -577,7 +416,7 @@ ELSIF  eState = IPRO_IDLE
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MR_MoveTorque" Id="{58cc436d-2cf3-40d0-b5af-35a5c051269f}" FolderPath="Requests\">
+    <Method Name="MR_MoveTorque" Id="{0d0a9f5b-f53f-4d27-b09a-5da162d32222}" FolderPath="Requests\">
       <Declaration><![CDATA[METHOD MR_MoveTorque : BOOL // control mode must have torque Mode edit :Torque can be change every time if needed;
 VAR_INPUT
 	lrTorque	: LREAL;// must smaller than max torque
@@ -586,10 +425,11 @@ END_VAR
       <Implementation>
         <ST><![CDATA[
 IF eState = IPRO_IDLE
-AND eCurrentMode = IPRO_CURRENT_MODE_TORQUE 
-AND NOT F_CheckInRange( lrHighLimit := lrTorqueFeedback + 0.5,// 1%
-					lrLowLimit := lrTorqueFeedback -0.5 ,
-					lrValue := lrTorque) // +-0.5%	
+	AND eCurrentMode = IPRO_CURRENT_MODE_TORQUE 
+	AND NOT F_CheckInRange(
+				lrHighLimit := lrTorqueFeedback + 0.5,// 1%
+				lrLowLimit := lrTorqueFeedback -0.5 ,
+				lrValue := lrTorque) // +-0.5%	
 THEN
 	bMoveTorque	:= TRUE;
 	bMoveTorqued	:= FALSE;
@@ -597,14 +437,19 @@ THEN
 	MR_MoveTorque := FALSE;
 	eState := IPRO_MOVE_TORQUE;
 	lrTorqueCmd := lrTorque;
-ELSIF eState = IPRO_IDLE AND eCurrentMode <>  IPRO_CURRENT_MODE_TORQUE THEN
+	
+ELSIF eState = IPRO_IDLE
+	AND eCurrentMode<>IPRO_CURRENT_MODE_TORQUE
+THEN
 	MR_MoveTorque := FALSE;
 	bBusy := TRUE;
 	bMoveTorque := TRUE;
 	bMoveTorqued	:= FALSE;
-	MS_SwitchMode( eModeChangeTo := IPRO_CURRENT_MODE_TORQUE);// if switch mode ok => eCurrentMode = IPRO_CURRENT_MODE_POSITION 
+	MS_SwitchMode(eModeChangeTo := IPRO_CURRENT_MODE_TORQUE);// if switch mode ok => eCurrentMode = IPRO_CURRENT_MODE_POSITION 
 
-ELSIF eState = IPRO_IDLE OR eState = IPRO_MOVE_TORQUE_DONE THEN
+ELSIF eState = IPRO_IDLE 
+	OR eState = IPRO_MOVE_TORQUE_DONE 
+THEN
 	bBusy := FALSE;
 	bMoveTorque := FALSE;
 	MR_MoveTorque := TRUE;
@@ -612,7 +457,7 @@ ELSIF eState = IPRO_IDLE OR eState = IPRO_MOVE_TORQUE_DONE THEN
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MR_Reset" Id="{763bf376-878f-483c-8f71-7e041aaaa6c1}" FolderPath="Requests\">
+    <Method Name="MR_Reset" Id="{2b2c7fb3-bf71-451a-9128-c4cbe2a3c533}" FolderPath="Requests\">
       <Declaration><![CDATA[METHOD MR_Reset : BOOL// can't not use this method because i didn't find way to reset
 ]]></Declaration>
       <Implementation>
@@ -627,7 +472,7 @@ ELSIF eState = IPRO_RESET_DONE THEN
 END_IF*)]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MR_Stop" Id="{035fc47d-2644-447f-9208-a8ce37eeec68}" FolderPath="Requests\">
+    <Method Name="MR_Stop" Id="{59ba60d7-8ae5-4339-b230-b4cb6d4a4b1f}" FolderPath="Requests\">
       <Declaration><![CDATA[METHOD MR_Stop : BOOL // carefully because it lead to IPRO_STATUS_FAULT // need to be init again]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF eState >= IPRO_IDLE AND eState <> IPRO_STOP_DONE THEN
@@ -644,13 +489,16 @@ ELSIF eState = IPRO_STOP_DONE THEN
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_Aborting" Id="{34c3c583-884b-4529-8de0-a6b521079a77}" FolderPath="StateMachine\">
+    <Method Name="MS_Aborting" Id="{6669002e-7ddc-4f29-b09d-fa81ccb85f53}" FolderPath="StateMachine\">
       <Declaration><![CDATA[METHOD PROTECTED MS_Aborting// still remain all the params set before init
 VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[bFieldbusEnableServoCommand := FALSE;
+lrSpeedCmd := 0;
+lrPositionCmd := 0;
+lrTorqueCmd := 0;
 bEmergenCyStop := false;
 arrAddressWrite[1][2] :=  BOOL_TO_WORD(bFieldbusEnableServoCommand);
 IF THIS^.eSystemStatus <> IPRO_STATUS_RUN THEN
@@ -660,7 +508,7 @@ END_IF
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_Home" Id="{73310be8-aefd-4b32-a99c-9c910779bb31}" FolderPath="StateMachine\">
+    <Method Name="MS_Home" Id="{a82686d0-19c1-4705-8230-910afbff76c7}" FolderPath="StateMachine\">
       <Declaration><![CDATA[METHOD PROTECTED MS_Home
 VAR_INPUT
 END_VAR
@@ -679,7 +527,7 @@ END_IF
 				]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_HomeDone" Id="{51130f45-2887-488f-ab48-14e215bb35b7}" FolderPath="StateMachine\">
+    <Method Name="MS_HomeDone" Id="{8c5d1efa-8d28-4f3a-988f-d958eaca4b42}" FolderPath="StateMachine\">
       <Declaration><![CDATA[METHOD PROTECTED  MS_HomeDone
 VAR_INPUT
 END_VAR
@@ -690,7 +538,7 @@ END_VAR
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_Idle" Id="{ad2d86d2-d003-4aa2-a244-488975ec060c}" FolderPath="StateMachine\">
+    <Method Name="MS_Idle" Id="{8858a3c4-b1ef-4e3d-9003-fec5be52e4f5}" FolderPath="StateMachine\">
       <Declaration><![CDATA[METHOD PROTECTED MS_Idle
 VAR_INPUT
 END_VAR
@@ -699,34 +547,16 @@ END_VAR
         <ST><![CDATA[;]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_Initializing" Id="{2dc5dcb9-afdc-48e0-9f37-b4da9e013df1}" FolderPath="StateMachine\">
+    <Method Name="MS_Initializing" Id="{54c9912c-a57e-47b7-9c2e-cde4ab36bc1f}" FolderPath="StateMachine\">
       <Declaration><![CDATA[METHOD PROTECTED MS_Initializing
 VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[arrAddressWrite[2][2] := eControlMode; 
-
-TempData_Word2Int.iInt := LREAL_TO_INT(ABS(lrMaxSpeed));
-arrAddressWrite[9][2] :=  TempData_Word2Int.iWord;
-
-arrAddressWrite[5][2] :=  LREAL_TO_WORD(lrMaxSpeedLimitOfControlModeSwitch); // unit 1
-
-arrAddressWrite[10][2] :=  LREAL_TO_WORD(ABS(lrMaxTorque*10));
-
-TempData_Word2Dint.idInt := LREAL_TO_DINT(lrNagativePositionSoftwareLimit);
-arrAddressWrite[4][2] := TempData_Word2Dint.iWord[0];
-arrAddressWrite[4][3] := TempData_Word2Dint.iWord[1];
-
-TempData_Word2Dint.idInt := LREAL_TO_DINT(lrPositivePositionSoftwareLimit);
-arrAddressWrite[3][2] := TempData_Word2Dint.iWord[0];
-arrAddressWrite[3][3] := TempData_Word2Dint.iWord[1];
-
-
-// this servo can't reset error by modbus
+        <ST><![CDATA[// this servo can't reset error by modbus
 IF THIS^.eSystemStatus = IPRO_STATUS_READY THEN // Ignor the faultcode AND nFaultCode = 0  THEN
 	bFieldbusEnableServoCommand := TRUE;
-	arrAddressWrite[1][2] :=  BOOL_TO_WORD(bFieldbusEnableServoCommand);
+	arrAddressWrite[1][2] := BOOL_TO_WORD(bFieldbusEnableServoCommand);
 END_IF
  
 IF eSystemStatus = IPRO_STATUS_RUN THEN
@@ -734,7 +564,7 @@ IF eSystemStatus = IPRO_STATUS_RUN THEN
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_MoveAbsolute" Id="{839020d0-6ee0-4ba9-b674-3d84a571891e}" FolderPath="StateMachine\">
+    <Method Name="MS_MoveAbsolute" Id="{b775430d-4bdd-45a4-a486-584aacedb928}" FolderPath="StateMachine\">
       <Declaration><![CDATA[METHOD PROTECTED MS_MoveAbsolute
 VAR_INPUT
 END_VAR
@@ -752,7 +582,7 @@ THEN
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_MoveAbsoluteDone" Id="{0c03608b-8e9c-42ce-80d7-911ac68c57ff}" FolderPath="StateMachine\">
+    <Method Name="MS_MoveAbsoluteDone" Id="{c8076e55-0cd3-419b-915d-ba528fd9900e}" FolderPath="StateMachine\">
       <Declaration><![CDATA[METHOD PROTECTED MS_MoveAbsoluteDone
 VAR_INPUT
 END_VAR
@@ -763,7 +593,7 @@ END_VAR
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_MoveTorque" Id="{27bc3784-96e1-418f-8900-9d381b825109}" FolderPath="StateMachine\">
+    <Method Name="MS_MoveTorque" Id="{1f758174-9816-41b3-b0c1-93e4728f4c89}" FolderPath="StateMachine\">
       <Declaration><![CDATA[METHOD PROTECTED MS_MoveTorque
 VAR_INPUT
 END_VAR
@@ -781,7 +611,7 @@ END_IF*)
 eState := IPRO_MOVE_TORQUE_DONE;]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_MoveTorqueDone" Id="{de19d06f-c526-41f3-8537-d9c73ccab9f2}" FolderPath="StateMachine\">
+    <Method Name="MS_MoveTorqueDone" Id="{8f9b48d7-1fdb-40bd-8df1-6de155336372}" FolderPath="StateMachine\">
       <Declaration><![CDATA[METHOD PROTECTED MS_MoveTorqueDone
 VAR_INPUT
 END_VAR
@@ -793,7 +623,7 @@ END_VAR
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_ReadyInitialized" Id="{05b6327b-6f4f-4b3b-b586-e5ed1a07a239}" FolderPath="StateMachine\">
+    <Method Name="MS_ReadyInitialized" Id="{cbc8a9ef-9949-4a0d-8ef9-e49466e0046c}" FolderPath="StateMachine\">
       <Declaration><![CDATA[METHOD PROTECTED MS_ReadyInitialized
 VAR_INPUT
 END_VAR
@@ -804,7 +634,7 @@ END_VAR
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_Reset" Id="{835175c1-92c0-4cc4-9c67-bc700b87c22f}" FolderPath="StateMachine\">
+    <Method Name="MS_Reset" Id="{a9cc5e5b-bbec-41b9-b69b-a7457e556196}" FolderPath="StateMachine\">
       <Declaration><![CDATA[METHOD PROTECTED MS_Reset
 VAR_INPUT
 END_VAR
@@ -813,7 +643,7 @@ END_VAR
         <ST><![CDATA[]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_ResetDone" Id="{f21c26a3-9660-44fa-b76c-6923caf99282}" FolderPath="StateMachine\">
+    <Method Name="MS_ResetDone" Id="{f08aa95a-6a54-4ffd-b94a-dcc9c286e2a9}" FolderPath="StateMachine\">
       <Declaration><![CDATA[METHOD PROTECTED MS_ResetDone
 VAR_INPUT
 END_VAR
@@ -822,7 +652,7 @@ END_VAR
         <ST><![CDATA[]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_Stop" Id="{4baeed33-f95c-40a3-b32b-6fc94000546f}" FolderPath="StateMachine\">
+    <Method Name="MS_Stop" Id="{f30ba650-5154-4e65-b042-d8ef3dc35992}" FolderPath="StateMachine\">
       <Declaration><![CDATA[METHOD PROTECTED MS_Stop
 VAR_INPUT
 END_VAR
@@ -835,7 +665,7 @@ IF eSystemStatus = IPRO_STATUS_FAULT THEN
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_StopDone" Id="{73729593-076a-4a1b-b9a7-c831a3c96566}" FolderPath="StateMachine\">
+    <Method Name="MS_StopDone" Id="{9ad74a08-b438-4ff2-acef-4f3b29d4b54f}" FolderPath="StateMachine\">
       <Declaration><![CDATA[METHOD PROTECTED MS_StopDone
 VAR_INPUT
 END_VAR
@@ -846,7 +676,7 @@ END_VAR
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_SwitchMode" Id="{de85c018-c69f-4ab1-8251-38634cdad4df}" FolderPath="StateMachine\">
+    <Method Name="MS_SwitchMode" Id="{40b3eeee-e744-4506-b2ff-c6859ef0c1b9}" FolderPath="StateMachine\">
       <Declaration><![CDATA[METHOD PROTECTED MS_SwitchMode : BOOL;
 VAR_INPUT
 	eModeChangeTo	: E_IProCurrentMode; // False is the first mode , TRUE is Seconde Mode in Control mode
@@ -887,18 +717,112 @@ ELSE
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_Uninitalized" Id="{4f1553bb-76a3-4e3e-a59d-71dc5240a3f0}" FolderPath="StateMachine\">
+    <Method Name="MS_Uninitalized" Id="{c0b072b8-11b2-49e7-943c-d6804dcfcc94}" FolderPath="StateMachine\">
       <Declaration><![CDATA[METHOD PROTECTED MS_Uninitalized
 VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[]]></ST>
+        <ST><![CDATA[bBusy := FALSE;
+arrAddressRead[0][0] := 4000;// motor speed FB //0.1 r/min // 4000, 4001
+arrAddressRead[0][1] := 2;
+arrAddressRead[0][2] := E_ModbusFunction.ReadHoldingRegisters;
+
+arrAddressRead[1][0] := 4004;// motor position FB// reference unit 
+arrAddressRead[1][1] := 4;
+arrAddressRead[1][2] := E_ModbusFunction.ReadHoldingRegisters;
+
+arrAddressRead[2][0] := 4016;// motor Torque FB// reference unit 
+arrAddressRead[2][1] := 1;
+arrAddressRead[2][2] := E_ModbusFunction.ReadHoldingRegisters;
+
+arrAddressRead[3][0] := 4064;// System status // 
+arrAddressRead[3][1] := 1;
+arrAddressRead[3][2] := E_ModbusFunction.ReadHoldingRegisters;
+
+arrAddressRead[4][0] := 4068;// Current Mode 
+arrAddressRead[4][1] := 1;
+arrAddressRead[4][2] := E_ModbusFunction.ReadHoldingRegisters;
+
+arrAddressRead[5][0] := 4198;// FaultCode
+arrAddressRead[5][1] := 1;
+arrAddressRead[5][2] := E_ModbusFunction.ReadHoldingRegisters;	
+iNumAddRegionRead := 6;
+// write
+arrAddressWrite[0][0] := 1830;// 
+arrAddressWrite[0][1] := 1;
+arrAddressWrite[0][2] := BOOL_TO_WORD(bControlModeSwitchCommand); // disable first
+arrAddressWrite[0][10]	:= E_ModbusFunction.WriteSingleRegister;
+
+arrAddressWrite[1][0] := 1822;// 
+arrAddressWrite[1][1] := 1;
+arrAddressWrite[1][2] :=  BOOL_TO_WORD(bFieldbusEnableServoCommand); // disable first
+arrAddressWrite[1][10] := E_ModbusFunction.WriteSingleRegister;
+
+arrAddressWrite[2][0] := 1006;// 
+arrAddressWrite[2][1] := 1;
+arrAddressWrite[2][2] := eControlMode; 
+arrAddressWrite[2][10] := E_ModbusFunction.WriteSingleRegister;
+
+arrAddressWrite[3][0] := 1070;//  //32 bit 1070, 1071
+arrAddressWrite[3][1] := 2;
+TempData_Word2Dint.idInt := LREAL_TO_DINT(lrPositivePositionSoftwareLimit);
+arrAddressWrite[3][2] := TempData_Word2Dint.iWord[0];
+arrAddressWrite[3][3] := TempData_Word2Dint.iWord[1];
+arrAddressWrite[3][10] := E_ModbusFunction.WriteMultipleRegisters;
+
+arrAddressWrite[4][0] := 1072;//  //32 bit 1072, 1073
+arrAddressWrite[4][1] := 2;
+TempData_Word2Dint.idInt := LREAL_TO_DINT(lrNagativePositionSoftwareLimit);
+arrAddressWrite[4][2] := TempData_Word2Dint.iWord[0];
+arrAddressWrite[4][3] := TempData_Word2Dint.iWord[1];
+arrAddressWrite[4][10] := E_ModbusFunction.WriteMultipleRegisters;
+
+arrAddressWrite[5][0] := 1180;// 
+arrAddressWrite[5][1] := 1;
+arrAddressWrite[5][2] :=  LREAL_TO_WORD(lrMaxSpeedLimitOfControlModeSwitch); 
+arrAddressWrite[5][10] := E_ModbusFunction.WriteSingleRegister;
+
+arrAddressWrite[6][0] := 1824;// 32 bit 1825
+arrAddressWrite[6][1] := 2;
+TempData_Word2Dint.idInt := LREAL_TO_DINT(lrPositionCmd);
+arrAddressWrite[6][2] := TempData_Word2Dint.iWord[0];
+arrAddressWrite[6][3] := TempData_Word2Dint.iWord[1];
+arrAddressWrite[6][10] := E_ModbusFunction.WriteMultipleRegisters;
+
+arrAddressWrite[7][0] := 1826;//16 bit
+arrAddressWrite[7][1] := 1;
+TempData_Word2Int.iInt := LREAL_TO_INT(lrSpeedCmd);
+arrAddressWrite[7][2] :=  TempData_Word2Int.iWord;
+arrAddressWrite[7][10] := E_ModbusFunction.WriteSingleRegister;
+
+arrAddressWrite[8][0] := 1828;// 16 bit
+arrAddressWrite[8][1] := 1;
+TempData_Word2Int.iInt := LREAL_TO_INT(lrTorqueCmd);
+arrAddressWrite[8][2] :=  TempData_Word2Int.iWord;
+arrAddressWrite[8][10] := E_ModbusFunction.WriteSingleRegister;
+
+arrAddressWrite[9][0] := 1862;// 1
+arrAddressWrite[9][1] := 1;
+TempData_Word2Int.iInt := LREAL_TO_INT(ABS(lrMaxSpeed));
+arrAddressWrite[9][2] := TempData_Word2Int.iWord;
+arrAddressWrite[9][10] := E_ModbusFunction.WriteSingleRegister;
+
+arrAddressWrite[10][0] := 1020;// 32 bit 1825/ //0.1 PERCENT
+arrAddressWrite[10][1] := 1;
+arrAddressWrite[10][2] := LREAL_TO_WORD(ABS(lrMaxTorque*10));
+arrAddressWrite[10][10]	:= E_ModbusFunction.WriteSingleRegister;
+
+arrAddressWrite[11][0] := 1846;
+arrAddressWrite[11][1] := 1;
+arrAddressWrite[11][2] := BOOL_TO_WORD(THIS^.bEmergenCyStop);
+arrAddressWrite[11][10]	:= E_ModbusFunction.WriteSingleRegister;
+iNumAddRegionWrite := 12;]]></ST>
       </Implementation>
     </Method>
-    <Property Name="NagativePositionLimit" Id="{02eb0aaa-4232-4803-a064-5555b6214697}" FolderPath="SetBeforInit\">
+    <Property Name="NagativePositionLimit" Id="{a1a1c3fa-f229-4e2d-9766-ec703c2de587}" FolderPath="SetBeforInit\">
       <Declaration><![CDATA[PROPERTY NagativePositionLimit : lreal]]></Declaration>
-      <Get Name="Get" Id="{cee5f6e6-25ee-4974-a420-8e7127a75e4e}">
+      <Get Name="Get" Id="{c561b735-862d-4dab-85ab-1ac0a4668272}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -906,7 +830,7 @@ END_VAR
           <ST><![CDATA[NagativePositionLimit := lrNagativePositionSoftwareLimit;]]></ST>
         </Implementation>
       </Get>
-      <Set Name="Set" Id="{37c8430d-95ff-4643-b8aa-fafc3a6c096c}">
+      <Set Name="Set" Id="{f60d0a52-4490-4908-8f23-4e565feffa59}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -919,9 +843,9 @@ END_IF
         </Implementation>
       </Set>
     </Property>
-    <Property Name="PositionCmd" Id="{fa14d991-ad16-4bb1-9115-c9f91617c08c}" FolderPath="Parameters\">
+    <Property Name="PositionCmd" Id="{23e83466-f96c-4622-876f-5a6f8b31225b}" FolderPath="Parameters\">
       <Declaration><![CDATA[PROPERTY PositionCmd : lreal]]></Declaration>
-      <Get Name="Get" Id="{64f133f0-e581-40e2-9338-9caecfef06e7}">
+      <Get Name="Get" Id="{4ffc8f22-a5cd-40fb-ac2c-b551154bd191}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -930,9 +854,9 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Property Name="PositionFeedBack" Id="{edcbcbf5-51ca-48e4-9b3d-984de7e4df8a}" FolderPath="Status\">
+    <Property Name="PositionFeedBack" Id="{f1fa1bdb-f57d-44eb-ae97-8f48f67d5f70}" FolderPath="Status\">
       <Declaration><![CDATA[PROPERTY PositionFeedBack : lreal]]></Declaration>
-      <Get Name="Get" Id="{ffd37cef-d969-455e-abc3-b64a939c1bf3}">
+      <Get Name="Get" Id="{00164334-2f50-4d35-9dd2-0ed5521dba27}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -941,31 +865,9 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Property Name="PositionModeSelectionCmd" Id="{1a990285-dec7-47cd-a142-981ce98ae6b0}" FolderPath="Parameters\">
-      <Declaration><![CDATA[PROPERTY PositionModeSelectionCmd : E_IPro_PositionCmdModeSelection]]></Declaration>
-      <Get Name="Get" Id="{5d985e5f-95ca-425c-bbc4-be65420971ab}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[PositionModeSelectionCmd := ePositionCmdModeSelection;]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
-    <Property Name="PositionModeSelectionFeedback" Id="{9d1ecf62-6155-4ecc-a839-5d5644a264a3}" FolderPath="Status\">
-      <Declaration><![CDATA[PROPERTY PositionModeSelectionFeedback : E_IPro_PositionCmdModeSelection]]></Declaration>
-      <Get Name="Get" Id="{19e40603-9b70-4348-85e8-b4cfb897478f}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[PositionModeSelectionFeedback := ePositionCmdModeSelectionFeedback;]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
-    <Property Name="PositionPositiveLimit" Id="{219d80fb-59e9-4235-bf66-6b15ab405f98}" FolderPath="SetBeforInit\">
+    <Property Name="PositionPositiveLimit" Id="{06450a26-3ac9-492f-8bb9-df1b1a771fb7}" FolderPath="SetBeforInit\">
       <Declaration><![CDATA[PROPERTY PositionPositiveLimit : lreal]]></Declaration>
-      <Get Name="Get" Id="{4d7ffe71-db63-4c73-8c14-260c4b5c8883}">
+      <Get Name="Get" Id="{33877c33-0487-4a3c-ad63-fd496fe84bd7}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -973,7 +875,7 @@ END_VAR
           <ST><![CDATA[PositionPositiveLimit := lrPositivePositionSoftwareLimit;]]></ST>
         </Implementation>
       </Get>
-      <Set Name="Set" Id="{1214e965-f81a-4d7f-92d6-94d827960ec5}">
+      <Set Name="Set" Id="{900ac512-6122-4a49-8d3e-903adf79f440}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -986,9 +888,9 @@ END_IF
         </Implementation>
       </Set>
     </Property>
-    <Property Name="ReallyError" Id="{21a2b482-0253-4cd1-b455-13aa7954aee0}" FolderPath="Status\">
+    <Property Name="ReallyError" Id="{131e458f-64bc-44a3-a841-415854b490d0}" FolderPath="Status\">
       <Declaration><![CDATA[PROPERTY ReallyError : bool]]></Declaration>
-      <Set Name="Set" Id="{0f4ca0fd-0e9e-4f35-9947-c7d7cf4b2792}">
+      <Set Name="Set" Id="{15d805cb-fa21-450c-8426-92b4717cf052}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -997,9 +899,9 @@ END_VAR
         </Implementation>
       </Set>
     </Property>
-    <Property Name="SpeedCmd" Id="{479584e6-3557-4022-8b36-8c51add03178}" FolderPath="Parameters\">
+    <Property Name="SpeedCmd" Id="{0a3d1347-d85b-4fe3-ba98-003bcfd016d4}" FolderPath="Parameters\">
       <Declaration><![CDATA[PROPERTY SpeedCmd : LREAL // r/ minute]]></Declaration>
-      <Get Name="Get" Id="{fbead89b-9bef-4b81-9544-083ed1e1ca9b}">
+      <Get Name="Get" Id="{ff03e774-b178-46dd-98e1-0a1339fb2aca}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -1008,7 +910,7 @@ END_VAR
 ]]></ST>
         </Implementation>
       </Get>
-      <Set Name="Set" Id="{c85d9936-6981-4b59-b589-ef6b5331ee75}">
+      <Set Name="Set" Id="{f22aed52-55fa-44fd-adb4-6e7498b50529}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -1019,9 +921,9 @@ arrAddressWrite[7][2] :=  TempData_Word2Int.iWord;]]></ST>
         </Implementation>
       </Set>
     </Property>
-    <Property Name="SpeedFeedback" Id="{010d3268-4859-48b2-8fde-214c882b76e4}" FolderPath="Status\">
+    <Property Name="SpeedFeedback" Id="{8c0c65e8-744a-4ad5-a009-67c9db3f6e5a}" FolderPath="Status\">
       <Declaration><![CDATA[PROPERTY SpeedFeedback : Lreal]]></Declaration>
-      <Get Name="Get" Id="{50586ef0-d956-44df-a1b4-955e837dfefe}">
+      <Get Name="Get" Id="{364a84ad-39b8-4928-b5bb-abe5794f9595}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -1030,9 +932,9 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Property Name="State" Id="{75e509e9-98be-4a01-832a-c8511fba1e0b}" FolderPath="Status\">
+    <Property Name="State" Id="{ca3be74d-8a42-48c3-bc02-f193a7afc1dd}" FolderPath="Status\">
       <Declaration><![CDATA[PROPERTY State : E_IPro_State]]></Declaration>
-      <Get Name="Get" Id="{3bf21b1e-2f91-4f04-9ba1-18b8fcfeb970}">
+      <Get Name="Get" Id="{34666fd9-328f-4f91-a8b2-ddcc78b6d879}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -1041,7 +943,7 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Method Name="StateMachine" Id="{fb35c8f6-4ee9-4269-9abf-e6062a881f57}" FolderPath="StateMachine\">
+    <Method Name="StateMachine" Id="{8d3ffbfd-6d5e-4328-9d69-29932a291b26}" FolderPath="StateMachine\">
       <Declaration><![CDATA[METHOD PROTECTED StateMachine
 VAR_INPUT
 END_VAR
@@ -1101,9 +1003,9 @@ END_VAR]]></Declaration>
 END_CASE]]></ST>
       </Implementation>
     </Method>
-    <Property Name="Status" Id="{76390144-2541-45be-ae8c-05fac6339900}" FolderPath="Status\">
+    <Property Name="Status" Id="{945903a2-3273-4225-9050-43cbdf878bdb}" FolderPath="Status\">
       <Declaration><![CDATA[PROPERTY Status : E_IProStatus]]></Declaration>
-      <Get Name="Get" Id="{1ea999ae-52f0-415a-b831-b6bcac7764de}">
+      <Get Name="Get" Id="{d6f6803a-14f1-44f6-b590-ec4070c2bb8a}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -1112,9 +1014,9 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Property Name="TorqueCmd" Id="{99328518-9cbb-47f3-8d04-c15f533f8545}" FolderPath="Parameters\">
+    <Property Name="TorqueCmd" Id="{fc7bc3e0-4bca-41e7-a5ee-2bbc532aa88e}" FolderPath="Parameters\">
       <Declaration><![CDATA[PROPERTY TorqueCmd : lreal // %]]></Declaration>
-      <Get Name="Get" Id="{7e14783b-9475-47e5-9631-e9ffbe712f85}">
+      <Get Name="Get" Id="{9b9e5f35-2aeb-4fe1-bf67-9fdf730cacc9}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -1123,9 +1025,9 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Property Name="TorqueFeedback" Id="{ec59056e-48ab-4df8-a1c7-5116d16f9e59}" FolderPath="Status\">
+    <Property Name="TorqueFeedback" Id="{f47dfc44-d2a1-41d7-a3ca-f94ced010654}" FolderPath="Status\">
       <Declaration><![CDATA[PROPERTY TorqueFeedback : lreal]]></Declaration>
-      <Get Name="Get" Id="{075bc2a3-03b8-4988-8795-cc646741a609}">
+      <Get Name="Get" Id="{41d90d48-da2f-46b1-b277-8d115eea513d}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -1137,7 +1039,6 @@ END_VAR
     <LineIds Name="FB_IPRO_ModbusRTU">
       <LineId Id="428" Count="0" />
       <LineId Id="438" Count="0" />
-      <LineId Id="585" Count="0" />
       <LineId Id="584" Count="0" />
       <LineId Id="673" Count="0" />
       <LineId Id="665" Count="3" />
@@ -1191,100 +1092,8 @@ END_VAR
     <LineIds Name="FB_IPRO_ModbusRTU.Enable.Get">
       <LineId Id="2" Count="0" />
     </LineIds>
-    <LineIds Name="FB_IPRO_ModbusRTU.Error.Get">
-      <LineId Id="2" Count="0" />
-    </LineIds>
     <LineIds Name="FB_IPRO_ModbusRTU.ErrorID.Get">
       <LineId Id="2" Count="0" />
-    </LineIds>
-    <LineIds Name="FB_IPRO_ModbusRTU.FirstCycle">
-      <LineId Id="120" Count="0" />
-      <LineId Id="15" Count="0" />
-      <LineId Id="121" Count="0" />
-      <LineId Id="117" Count="0" />
-      <LineId Id="2" Count="0" />
-      <LineId Id="151" Count="0" />
-      <LineId Id="18" Count="0" />
-      <LineId Id="16" Count="1" />
-      <LineId Id="19" Count="0" />
-      <LineId Id="158" Count="0" />
-      <LineId Id="21" Count="0" />
-      <LineId Id="20" Count="0" />
-      <LineId Id="22" Count="0" />
-      <LineId Id="159" Count="0" />
-      <LineId Id="23" Count="2" />
-      <LineId Id="160" Count="0" />
-      <LineId Id="27" Count="0" />
-      <LineId Id="26" Count="0" />
-      <LineId Id="31" Count="0" />
-      <LineId Id="161" Count="0" />
-      <LineId Id="30" Count="0" />
-      <LineId Id="29" Count="0" />
-      <LineId Id="36" Count="0" />
-      <LineId Id="33" Count="0" />
-      <LineId Id="32" Count="0" />
-      <LineId Id="34" Count="0" />
-      <LineId Id="97" Count="0" />
-      <LineId Id="37" Count="0" />
-      <LineId Id="41" Count="0" />
-      <LineId Id="162" Count="0" />
-      <LineId Id="39" Count="0" />
-      <LineId Id="98" Count="0" />
-      <LineId Id="40" Count="0" />
-      <LineId Id="47" Count="0" />
-      <LineId Id="163" Count="0" />
-      <LineId Id="43" Count="0" />
-      <LineId Id="99" Count="0" />
-      <LineId Id="44" Count="1" />
-      <LineId Id="164" Count="0" />
-      <LineId Id="86" Count="0" />
-      <LineId Id="100" Count="1" />
-      <LineId Id="90" Count="0" />
-      <LineId Id="102" Count="0" />
-      <LineId Id="42" Count="0" />
-      <LineId Id="61" Count="0" />
-      <LineId Id="57" Count="0" />
-      <LineId Id="103" Count="0" />
-      <LineId Id="105" Count="1" />
-      <LineId Id="104" Count="0" />
-      <LineId Id="56" Count="0" />
-      <LineId Id="58" Count="1" />
-      <LineId Id="107" Count="0" />
-      <LineId Id="60" Count="0" />
-      <LineId Id="66" Count="0" />
-      <LineId Id="165" Count="0" />
-      <LineId Id="51" Count="0" />
-      <LineId Id="108" Count="1" />
-      <LineId Id="65" Count="0" />
-      <LineId Id="110" Count="0" />
-      <LineId Id="166" Count="0" />
-      <LineId Id="67" Count="1" />
-      <LineId Id="122" Count="0" />
-      <LineId Id="128" Count="0" />
-      <LineId Id="125" Count="0" />
-      <LineId Id="123" Count="0" />
-      <LineId Id="69" Count="1" />
-      <LineId Id="130" Count="0" />
-      <LineId Id="129" Count="0" />
-      <LineId Id="62" Count="0" />
-      <LineId Id="38" Count="0" />
-      <LineId Id="167" Count="0" />
-      <LineId Id="71" Count="0" />
-      <LineId Id="131" Count="1" />
-      <LineId Id="72" Count="0" />
-      <LineId Id="134" Count="0" />
-      <LineId Id="168" Count="0" />
-      <LineId Id="75" Count="0" />
-      <LineId Id="133" Count="0" />
-      <LineId Id="73" Count="0" />
-      <LineId Id="80" Count="0" />
-      <LineId Id="169" Count="0" />
-      <LineId Id="141" Count="3" />
-      <LineId Id="79" Count="0" />
-    </LineIds>
-    <LineIds Name="FB_IPRO_ModbusRTU.FirstCycleEx">
-      <LineId Id="5" Count="0" />
-      <LineId Id="8" Count="0" />
     </LineIds>
     <LineIds Name="FB_IPRO_ModbusRTU.InPosition.Get">
       <LineId Id="11" Count="1" />
@@ -1321,8 +1130,10 @@ END_VAR
       <LineId Id="2" Count="0" />
       <LineId Id="4" Count="0" />
       <LineId Id="6" Count="0" />
+      <LineId Id="13" Count="0" />
       <LineId Id="10" Count="0" />
       <LineId Id="7" Count="2" />
+      <LineId Id="14" Count="0" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_IPRO_ModbusRTU.MR_Home">
@@ -1348,7 +1159,6 @@ END_VAR
       <LineId Id="7" Count="0" />
     </LineIds>
     <LineIds Name="FB_IPRO_ModbusRTU.MR_Init">
-      <LineId Id="15" Count="1" />
       <LineId Id="2" Count="1" />
       <LineId Id="19" Count="0" />
       <LineId Id="12" Count="0" />
@@ -1393,6 +1203,7 @@ END_VAR
       <LineId Id="5" Count="0" />
       <LineId Id="19" Count="0" />
       <LineId Id="11" Count="0" />
+      <LineId Id="45" Count="0" />
       <LineId Id="14" Count="1" />
       <LineId Id="12" Count="0" />
       <LineId Id="7" Count="0" />
@@ -1400,12 +1211,15 @@ END_VAR
       <LineId Id="16" Count="0" />
       <LineId Id="9" Count="1" />
       <LineId Id="20" Count="0" />
+      <LineId Id="50" Count="0" />
       <LineId Id="17" Count="0" />
+      <LineId Id="48" Count="1" />
       <LineId Id="21" Count="2" />
       <LineId Id="33" Count="0" />
       <LineId Id="18" Count="0" />
       <LineId Id="31" Count="0" />
       <LineId Id="28" Count="0" />
+      <LineId Id="46" Count="1" />
       <LineId Id="40" Count="0" />
       <LineId Id="29" Count="1" />
       <LineId Id="34" Count="0" />
@@ -1427,6 +1241,7 @@ END_VAR
     </LineIds>
     <LineIds Name="FB_IPRO_ModbusRTU.MS_Aborting">
       <LineId Id="6" Count="0" />
+      <LineId Id="19" Count="2" />
       <LineId Id="15" Count="0" />
       <LineId Id="2" Count="0" />
       <LineId Id="9" Count="2" />
@@ -1450,20 +1265,6 @@ END_VAR
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_IPRO_ModbusRTU.MS_Initializing">
-      <LineId Id="14" Count="0" />
-      <LineId Id="20" Count="0" />
-      <LineId Id="19" Count="0" />
-      <LineId Id="18" Count="0" />
-      <LineId Id="22" Count="0" />
-      <LineId Id="21" Count="0" />
-      <LineId Id="24" Count="0" />
-      <LineId Id="23" Count="0" />
-      <LineId Id="26" Count="2" />
-      <LineId Id="25" Count="0" />
-      <LineId Id="30" Count="2" />
-      <LineId Id="29" Count="0" />
-      <LineId Id="34" Count="0" />
-      <LineId Id="33" Count="0" />
       <LineId Id="8" Count="0" />
       <LineId Id="2" Count="0" />
       <LineId Id="35" Count="0" />
@@ -1539,6 +1340,15 @@ END_VAR
       <LineId Id="15" Count="0" />
     </LineIds>
     <LineIds Name="FB_IPRO_ModbusRTU.MS_Uninitalized">
+      <LineId Id="123" Count="0" />
+      <LineId Id="6" Count="0" />
+      <LineId Id="23" Count="13" />
+      <LineId Id="116" Count="0" />
+      <LineId Id="38" Count="29" />
+      <LineId Id="119" Count="0" />
+      <LineId Id="69" Count="29" />
+      <LineId Id="115" Count="0" />
+      <LineId Id="100" Count="14" />
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_IPRO_ModbusRTU.NagativePositionLimit.Get">
@@ -1553,12 +1363,6 @@ END_VAR
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_IPRO_ModbusRTU.PositionFeedBack.Get">
-      <LineId Id="2" Count="0" />
-    </LineIds>
-    <LineIds Name="FB_IPRO_ModbusRTU.PositionModeSelectionCmd.Get">
-      <LineId Id="2" Count="0" />
-    </LineIds>
-    <LineIds Name="FB_IPRO_ModbusRTU.PositionModeSelectionFeedback.Get">
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_IPRO_ModbusRTU.PositionPositiveLimit.Get">

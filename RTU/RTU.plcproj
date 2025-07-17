@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FileVersion>1.0.0.0</FileVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{801bb319-3ac8-4dd7-9eaf-1ce6a49d935d}</ProjectGuid>
+    <SubObjectsSortedByName>True</SubObjectsSortedByName>
+    <DownloadApplicationInfo>true</DownloadApplicationInfo>
+    <WriteProductVersion>true</WriteProductVersion>
+    <GenerateTpy>false</GenerateTpy>
+    <Name>RTU</Name>
+    <ProgramVersion>3.1.4024.0</ProgramVersion>
+    <Application>{96523480-05b5-460b-a7fd-701c77800fa9}</Application>
+    <TypeSystem>{476bbee1-c429-4c51-b5ff-0cd8dfd21e67}</TypeSystem>
+    <Implicit_Task_Info>{2e1aa34b-1195-487e-ac55-20f035918861}</Implicit_Task_Info>
+    <Implicit_KindOfTask>{44c1e13b-c553-4b03-a7e0-b91fc798bef8}</Implicit_KindOfTask>
+    <Implicit_Jitter_Distribution>{9ed9a256-3038-433b-b9b1-e0427b57f87c}</Implicit_Jitter_Distribution>
+    <LibraryReferences>{65fd23a6-fc4d-4e43-8fa6-4447f78a7932}</LibraryReferences>
+    <Company>NewEngineer</Company>
+    <Released>false</Released>
+    <Title>Tc_ModbusDevices</Title>
+    <ProjectVersion>0.0.0.1</ProjectVersion>
+    <LibraryCategories>
+      <LibraryCategory>
+        <Id>{34b615cd-45ba-4d29-985a-190ea3e88038}</Id>
+        <Version>1.0.0.0</Version>
+        <DefaultName>Devices</DefaultName>
+      </LibraryCategory>
+    </LibraryCategories>
+    <SelectedLibraryCategories>
+      <Id>{34b615cd-45ba-4d29-985a-190ea3e88038}</Id>
+    </SelectedLibraryCategories>
+    <DefaultNamespace>Tc_ModbusDevices</DefaultNamespace>
+    <Placeholder>Tc_ModbusDevices</Placeholder>
+    <Author>https://github.com/phucpha</Author>
+    <Description>This Library is a use for modbus RTU Slave and  Modbus Tcp/IP Slave components .</Description>
+    <DocFormat>reStructuredText</DocFormat>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="DUTs\ServoIpro\E_IProCtrlMode.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ServoIpro\E_IProCurrentMode.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ServoIpro\E_IProStatus.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ServoIpro\E_IPro_PositionCmdModeSelection.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ServoIpro\E_IPro_State.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\VFD\E_VfdMdriverFaultInfor.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\VFD\E_VFD_State.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\VFD\E_VFD_Status.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\Visu\ServoIpro\E_VisuCtrlSingleAxisIproState.TcDUT">
+      <SubType>Code</SubType>
+      <ExcludeFromBuild>false</ExcludeFromBuild>
+    </Compile>
+    <Compile Include="DUTs\Visu\ServoIpro\ST_VisuCtrlAxisIproFrame.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\Visu\VFD\E_VisuCtrlVfdState.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\Visu\VFD\ST_VisuCtrlVfdFrame.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PlcTask.TcTTO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POU.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\EmkoTemperature\FB_TemperatureRelativeHumiditySensor_Emko.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Ipro\FB_IPRO_ModbusRTU.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Ipro\I_Ipro_MotorPower.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Smowo\FB_LoadCell_Smowo.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Smowo\FB_LoadCell_SwomoConfig.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\VFD\FB_UniversalVFDModbus.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\VFD\FB_VFD_ABB_ACS480.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\VFD\FB_VFD_Mdriver.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\VFD\FB_VFD_V20_Siemens.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\VFD\I_UniversalVFD.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TEST\PGR_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TEST\VFD\FB_UniversalVFDModbus_Ex.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TEST\VFD\FB_UniversalVFDModbus_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Version\Global_Version.TcGVL">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="DUTs" />
+    <Folder Include="DUTs\Visu" />
+    <Folder Include="DUTs\ServoIpro" />
+    <Folder Include="DUTs\VFD" />
+    <Folder Include="DUTs\Visu\ServoIpro" />
+    <Folder Include="DUTs\Visu\VFD" />
+    <Folder Include="GVLs" />
+    <Folder Include="POUs\EmkoTemperature" />
+    <Folder Include="POUs\Ipro" />
+    <Folder Include="POUs\Smowo" />
+    <Folder Include="POUs\VFD" />
+    <Folder Include="TEST" />
+    <Folder Include="TEST\VFD" />
+    <Folder Include="Version" />
+    <Folder Include="VISUs" />
+    <Folder Include="POUs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PlaceholderReference Include="Tc2_ModbusRTU">
+      <DefaultResolution>Tc2_ModbusRTU, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_ModbusRTU</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_Standard">
+      <DefaultResolution>Tc2_Standard, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_Standard</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_System">
+      <DefaultResolution>Tc2_System, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_System</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc3_Module">
+      <DefaultResolution>Tc3_Module, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc3_Module</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc_Math">
+      <DefaultResolution>Tc_Math, * (NewEngineer)</DefaultResolution>
+      <Namespace>Tc_Math</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="TC_ModbusBase">
+      <DefaultResolution>TC_ModbusBase, * (NewEngineer)</DefaultResolution>
+      <Namespace>TC_ModbusBase</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc_Utilities">
+      <DefaultResolution>Tc_Utilities, * (NewEngineer)</DefaultResolution>
+      <Namespace>Tc_Utilities</Namespace>
+    </PlaceholderReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="RTU.tmc">
+      <SubType>Content</SubType>
+    </None>
+    <Content Include="TEST\Readme.txt">
+      <SubType>Content</SubType>
+    </Content>
+  </ItemGroup>
+  <ProjectExtensions>
+    <PlcProjectOptions>
+      <XmlArchive>
+        <Data>
+          <o xml:space="preserve" t="OptionKey">
+      <v n="Name">"&lt;ProjectRoot&gt;"</v>
+      <d n="SubKeys" t="Hashtable" />
+      <d n="Values" t="Hashtable" />
+    </o>
+        </Data>
+        <TypeList>
+          <Type n="Hashtable">System.Collections.Hashtable</Type>
+          <Type n="OptionKey">{54dd0eac-a6d8-46f2-8c27-2f43c7e49861}</Type>
+          <Type n="String">System.String</Type>
+        </TypeList>
+      </XmlArchive>
+    </PlcProjectOptions>
+  </ProjectExtensions>
+</Project>

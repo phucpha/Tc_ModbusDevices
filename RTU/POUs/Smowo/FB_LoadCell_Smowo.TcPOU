@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_LoadCell_Smowo" Id="{4658126e-c473-4426-805d-4ba545f65734}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_LoadCell_Smowo EXTENDS FB_ModbusSlaveRtu
+VAR
+	lrValueRaw : LREAL;
+	lrValueGram : LREAL;
+	lrValueKg : LREAL;
+	TmpData : U_Word2Dint;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[SUPER^();]]></ST>
+    </Implementation>
+    <Method Name="Convert" Id="{f612aa90-cf6b-4e46-acd4-79a4601d15a3}">
+      <Declaration><![CDATA[METHOD Convert : BOOL
+VAR_INPUT
+	iRegionNo	: 	INT;
+	pReadData	:	POINTER TO word;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE iRegionNo OF
+	0:
+		TmpData.iWord[1] := pReadData[0];
+		TmpData.iWord[0] := pReadData[1];
+		lrValueGram := DINT_TO_LREAL(TmpData.idInt) ;
+		lrValueKg := lrValueGram * 0.001;
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="FirstCycle" Id="{21c18c7d-3744-4286-a670-437cfb3ae6c5}">
+      <Declaration><![CDATA[METHOD FirstCycle // must be call once time 
+VAR_INPUT
+	sName : STRING;
+	iUnitID : BYTE ; // modbus address of the device : 1- 255
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.sName := sName;
+THIS^.iUnitID := iUnitID;
+
+arrAddressRead[0][0] := 0;
+arrAddressRead[0][1] := 2;
+arrAddressRead[0][2] := TC_ModbusBase.E_ModbusFunction.ReadHoldingRegisters;
+iNumAddRegionRead := 1;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="ValueGram" Id="{6bfa4383-7f76-4f9d-aa73-cd9028500bbe}">
+      <Declaration><![CDATA[PROPERTY ValueGram : reference to lreal]]></Declaration>
+      <Get Name="Get" Id="{d057e907-b377-4627-a8a5-ae196526c980}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ValueGram REF= lrValueGram;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ValueKg" Id="{bc5da4ff-2b2d-45e3-8907-6cce7b8feed0}">
+      <Declaration><![CDATA[PROPERTY ValueKg : reference to lreal]]></Declaration>
+      <Get Name="Get" Id="{c7faa42d-f77d-4337-9619-3980a6132df5}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ValueKg ref= lrValueKg;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <LineIds Name="FB_LoadCell_Smowo">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_Smowo.Convert">
+      <LineId Id="7" Count="1" />
+      <LineId Id="13" Count="1" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_Smowo.FirstCycle">
+      <LineId Id="7" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="22" Count="3" />
+      <LineId Id="21" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_Smowo.ValueGram.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_Smowo.ValueKg.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <TcSmProject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4024.56">
-	<Project ProjectGUID="{2C7708E9-0D44-4D37-B35F-7C6E87D86B7B}" Target64Bit="true" ShowHideConfigurations="#x3c7">
+	<Project ProjectGUID="{B6CB142D-4D54-4731-8650-235DA4C1B6BC}" Target64Bit="true" ShowHideConfigurations="#x3c7">
 		<System>
 			<Tasks>
 				<Task Id="3" Priority="20" CycleTime="100000" AmsPort="350" AdtTasks="true">
@@ -9,7 +9,7 @@
 			</Tasks>
 		</System>
 		<Plc>
-			<Project File="VFD.xti"/>
+			<Project File="RTU.xti"/>
 		</Plc>
 	</Project>
 </TcSmProject>

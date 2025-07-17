@@ -1,117 +1,117 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
-  <Itf Name="I_UniversalVFD" Id="{23324d35-3130-4066-b45b-e0a06821df98}">
+  <Itf Name="I_UniversalVFD" Id="{4181f415-d4b0-4386-aabe-ad6cb4d68751}">
     <Declaration><![CDATA[INTERFACE I_UniversalVFD
 ]]></Declaration>
-    <Property Name="Active" Id="{b8fe9bb3-5031-4fef-ab1d-0dd65e5b917c}">
+    <Property Name="Active" Id="{60bff94f-cc3c-4c72-ab5d-12843bde68cd}">
       <Declaration><![CDATA[
 PROPERTY Active : REFERENCE TO  bool]]></Declaration>
-      <Get Name="Get" Id="{f98ee447-d2a7-4fa0-bb98-e455c4952b0d}">
+      <Get Name="Get" Id="{9a542b7e-2753-4a61-808f-c8fb13edd809}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="AcVoltageToMotor" Id="{6875d98f-77a4-420f-8625-cfafde67b527}">
+    <Property Name="AcVoltageToMotor" Id="{0ba01edf-c481-457f-8761-f0ce4f8accb8}">
       <Declaration><![CDATA[PROPERTY AcVoltageToMotor : Reference to lreal]]></Declaration>
-      <Get Name="Get" Id="{1eb6f439-b561-472c-9e35-2f687902cb8b}">
+      <Get Name="Get" Id="{a6d050c4-c8fc-42f7-acba-ed9279b809af}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="Busy" Id="{29969d3c-2ea8-49b3-8804-bf9eaa984431}">
+    <Property Name="Busy" Id="{99f83de9-7473-4e75-90d3-40f1d64f80a3}">
       <Declaration><![CDATA[
 PROPERTY Busy : reference to bool]]></Declaration>
-      <Get Name="Get" Id="{abbcff3f-6929-4d8f-b516-20c7c08bf3f8}">
+      <Get Name="Get" Id="{c43fc99c-874b-4e0a-b36a-f811d373933f}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="Current" Id="{88a55982-5050-4108-b4a6-4f324becbfcb}">
+    <Property Name="Current" Id="{2f44faa2-247a-4d94-b3fe-7c4ac0b332c5}">
       <Declaration><![CDATA[PROPERTY Current : reference to lreal]]></Declaration>
-      <Get Name="Get" Id="{1b7b0297-4629-4ce9-8503-f0db8641dc75}">
+      <Get Name="Get" Id="{543d06e6-a8a3-4545-928e-3d728d1289c0}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="DcVoltage" Id="{44cf134e-d0fb-4888-8a34-7fed6a011d30}">
+    <Property Name="DcVoltage" Id="{a8050629-48b9-4114-bab0-dc6dc4e243cb}">
       <Declaration><![CDATA[PROPERTY DcVoltage : Reference to lreal]]></Declaration>
-      <Get Name="Get" Id="{6ea0997e-50d6-43b3-8a76-a7b0ef9e202a}">
+      <Get Name="Get" Id="{c2c93ddd-faea-4594-87ad-698e4c104fc1}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="Error" Id="{8bd51c09-8856-4a0c-920e-12f8c63fdd60}">
+    <Property Name="Error" Id="{0dc725b3-7753-4dda-826f-5a80b8906f68}">
       <Declaration><![CDATA[
 PROPERTY Error : REFERENCE to bool]]></Declaration>
-      <Get Name="Get" Id="{fbe59dc7-9ed2-4ced-a7f0-f9b6e859ab01}">
+      <Get Name="Get" Id="{b3429dba-b23a-42a9-82a8-f758db1fe82f}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="ErrorID" Id="{122e42c2-c5c9-45ff-8811-673ed325ed5e}">
+    <Property Name="ErrorID" Id="{4eb68e8b-4251-4627-b81c-3db76e101be6}">
       <Declaration><![CDATA[
 PROPERTY ErrorID : reference to UDINT]]></Declaration>
-      <Get Name="Get" Id="{74a6d8b5-00c8-43dd-9a0e-f67e22dae597}">
+      <Get Name="Get" Id="{e2ab1010-24bd-46f5-87e2-edad366e4951}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="HzActual" Id="{58c01c33-4ae3-4094-a002-6265e9639f24}">
+    <Property Name="HzActual" Id="{0e0f3750-102a-4c11-ae3a-03b376f16239}">
       <Declaration><![CDATA[PROPERTY HzActual : REFERENCE TO  LReal]]></Declaration>
-      <Get Name="Get" Id="{183a95d8-bf97-4917-bd7b-b91bd8e18715}">
+      <Get Name="Get" Id="{b149387b-3e2e-43d1-a32c-47128c764680}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="HzControl" Id="{417f2ce7-7614-4776-acbc-8734d67c26ee}">
+    <Property Name="HzControl" Id="{e7e947af-fc92-4bb8-bf22-c6bedb850229}">
       <Declaration><![CDATA[PROPERTY HzControl : reference to LReal]]></Declaration>
-      <Get Name="Get" Id="{f5fe414a-fbaf-4abc-b6df-2490923b08b8}">
+      <Get Name="Get" Id="{e0dc3cae-ee50-4d44-ae63-5ffb467c855f}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="InHz" Id="{8881010d-d9fa-4de9-a251-18c1bc1d13e5}">
+    <Property Name="InHz" Id="{d518c374-3ca3-4e6b-a0a0-574f99a68ed3}">
       <Declaration><![CDATA[
 PROPERTY InHz : bool]]></Declaration>
-      <Get Name="Get" Id="{850bc327-03b9-4b60-b961-457bd8462eac}">
+      <Get Name="Get" Id="{8b2af08f-a6d8-4e37-8491-d8537943c1c8}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="isRunForward" Id="{b99783fd-6235-4a5d-a4e2-d2729bce4cb8}">
+    <Property Name="isRunForward" Id="{904a26ec-17c4-4604-8a18-1fff5fe404f1}">
       <Declaration><![CDATA[PROPERTY isRunForward : bool]]></Declaration>
-      <Get Name="Get" Id="{a611f085-4f64-4cce-98b6-c6b2b662e845}">
+      <Get Name="Get" Id="{34a6aeb7-1fa4-4e6a-be4b-4eeaeb9e0d75}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="IsRunning" Id="{88c649a4-82a3-4a63-ab5a-e61bf7c71c2d}">
+    <Property Name="IsRunning" Id="{187e1982-8a2e-4bdb-8ddc-c53ab36266e6}">
       <Declaration><![CDATA[
 PROPERTY IsRunning : bool]]></Declaration>
-      <Get Name="Get" Id="{bdd616d7-48b0-4511-8e3c-802e093e56d2}">
+      <Get Name="Get" Id="{a9853578-39a1-4dad-957b-a68c316eb293}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="isRunReverse" Id="{b78c3a17-99d9-4327-b4ea-4edcf188139d}">
+    <Property Name="isRunReverse" Id="{d79aaf4c-1399-4fcf-9997-a69eb6a3a08c}">
       <Declaration><![CDATA[PROPERTY isRunReverse : bool]]></Declaration>
-      <Get Name="Get" Id="{315bb845-b4b0-4ce1-8fcb-011d826b5425}">
+      <Get Name="Get" Id="{6cf455c0-6e5b-49a3-aa7e-597e4a67878e}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="isStop" Id="{d1a299b3-2edd-4751-850a-67b27a0764ec}">
+    <Property Name="isStop" Id="{5ff41c62-4e9b-43cc-aa16-b1f400902788}">
       <Declaration><![CDATA[PROPERTY isStop : bool]]></Declaration>
-      <Get Name="Get" Id="{bfa7e68a-0177-4d14-84d0-3b23d22e5f6c}">
+      <Get Name="Get" Id="{52114e1c-e1c4-4a75-9463-fde3e302288d}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Method Name="MR_Abort" Id="{58451b8c-ac5a-4d6b-8c08-2b8629862561}">
+    <Method Name="MR_Abort" Id="{d4b84a06-25b5-49c0-b77c-5622e8012217}">
       <Declaration><![CDATA[METHOD MR_Abort : BOOL
 VAR_INPUT
 END_VAR
 ]]></Declaration>
     </Method>
-    <Method Name="MR_Init" Id="{09904ac4-ca10-4f6e-a613-fd6847265faf}">
+    <Method Name="MR_Init" Id="{0ebd9a55-543e-499b-9df0-14aaf2045ecd}">
       <Declaration><![CDATA[METHOD MR_Init : bool
 VAR_INPUT
 END_VAR
 ]]></Declaration>
     </Method>
-    <Method Name="MR_Reset" Id="{76896a56-61e3-4a3b-8389-026dce8e40ed}">
+    <Method Name="MR_Reset" Id="{77c8d3dd-aa7c-4c6f-804b-eb2916a29e72}">
       <Declaration><![CDATA[METHOD MR_Reset : BOOL
 VAR_INPUT
 END_VAR
 ]]></Declaration>
     </Method>
-    <Method Name="MR_RunForward" Id="{0f5599d6-61a5-4462-9ea8-4cb86a0f53a0}">
+    <Method Name="MR_RunForward" Id="{a89bb7bb-13ff-4237-9761-0109e5f73c31}">
       <Declaration><![CDATA[//must stop before call run reverse or forward
 METHOD MR_RunForward : BOOL// carefully about this state , it only into run forward if estatus = VFD_STATUS_RUNNING_FORWARD or it return True
 VAR_INPUT
@@ -119,93 +119,93 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
     </Method>
-    <Method Name="MR_RunReverse" Id="{e6d2a6ae-827f-4b6e-97e4-50032ea0dc8b}">
+    <Method Name="MR_RunReverse" Id="{ad49531d-8a8a-4072-8654-f43da7d09035}">
       <Declaration><![CDATA[METHOD MR_RunReverse : BOOL// must stop before call run reverse or forward
 VAR_INPUT
 	hz : LREAL; // >0 and < 50;
 END_VAR
 ]]></Declaration>
     </Method>
-    <Method Name="MR_Stop" Id="{306f0f1f-01f1-463c-84a0-6410a9bd93a6}">
+    <Method Name="MR_Stop" Id="{42381ea3-940e-4d67-9168-0684d351e882}">
       <Declaration><![CDATA[METHOD MR_Stop : BOOL
 VAR_INPUT
 END_VAR
 ]]></Declaration>
     </Method>
-    <Property Name="Name" Id="{63f17aee-7aca-46a4-a834-73e69115f182}">
+    <Property Name="Name" Id="{a6d98088-8d96-4616-9c5d-5f388a2fadd8}">
       <Declaration><![CDATA[PROPERTY Name : STRING]]></Declaration>
-      <Get Name="Get" Id="{a1b95b13-ca50-47bf-aa67-c0e7486d00d5}">
+      <Get Name="Get" Id="{4815d675-6c64-4ecf-89f0-662d29b850b1}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
-      <Set Name="Set" Id="{ae0e3ed6-e949-4945-9478-d660980b3f0c}">
+      <Set Name="Set" Id="{31c88e78-52ba-42d8-aa09-b71c17ea213f}">
         <Declaration><![CDATA[]]></Declaration>
       </Set>
     </Property>
-    <Property Name="Overload" Id="{496db2be-db04-44d0-9783-24ab78798242}">
+    <Property Name="Overload" Id="{83f3ba3e-c2a6-40b8-8a7d-e950dbffe878}">
       <Declaration><![CDATA[
 PROPERTY Overload : reference TO BOOL]]></Declaration>
-      <Get Name="Get" Id="{67315955-21b2-4645-ac0b-c606d88ea8a4}">
+      <Get Name="Get" Id="{f9489a87-0f3a-4e8c-9a36-79d6aa033888}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="PowerKw" Id="{cc8aebdb-2e09-402f-aa2f-0b6ce3d99bcf}">
+    <Property Name="PowerKw" Id="{786c4f3a-ec30-4000-a768-5cef656b712d}">
       <Declaration><![CDATA[
 PROPERTY PowerKw : REFERENCE TO LREAL
 ]]></Declaration>
-      <Get Name="Get" Id="{9f7894ed-795f-446f-8ff0-414942fb8f8e}">
+      <Get Name="Get" Id="{1a1d964c-43f9-4294-acff-4e5284a7254a}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="ReallyError" Id="{0ce09966-5dbc-40b9-885d-ebd64b297400}">
-      <Declaration><![CDATA[PROPERTY ReallyError : bool]]></Declaration>
-      <Get Name="Get" Id="{b357f310-c55e-4cd2-85a8-a3d4ba7e931a}">
+    <Property Name="ReallyError" Id="{e9162a75-6d5e-4bd5-b55f-86efd7ac6596}">
+      <Declaration><![CDATA[PROPERTY ReallyError :REFERENCE to bool]]></Declaration>
+      <Get Name="Get" Id="{80f387c8-8ef1-4738-acb6-38af31d58b76}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="Speed" Id="{ebff0e61-ad3f-479c-bafb-36f3caa07870}">
+    <Property Name="Speed" Id="{b826d628-760a-4023-ae44-e1fa9ef20d4e}">
       <Declaration><![CDATA[PROPERTY Speed : Reference to lreal]]></Declaration>
-      <Get Name="Get" Id="{6d0ca652-99d6-472b-885d-db8037a24479}">
+      <Get Name="Get" Id="{b1148d37-90f1-4045-b692-fddfe2f7f3df}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="State" Id="{14300aa2-6ce4-4279-b116-44d322dbc522}">
+    <Property Name="State" Id="{d3bdfe7c-437e-40dc-ba92-ffa0f42d6918}">
       <Declaration><![CDATA[
 PROPERTY State : reference to E_Vfd_State]]></Declaration>
-      <Get Name="Get" Id="{5c9261a0-ec4e-4fd2-af02-23b5dcca8c28}">
+      <Get Name="Get" Id="{79ef2dc2-dfb5-495f-805d-4c3c89fa4e94}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="Status" Id="{174a9f6a-60d8-491a-b3d6-73549e082dc3}">
+    <Property Name="Status" Id="{9d70a471-84c3-4189-b18a-e4ec3a1c7194}">
       <Declaration><![CDATA[
 PROPERTY Status : reference to E_VFD_Status]]></Declaration>
-      <Get Name="Get" Id="{423a0f00-4028-488b-b396-6161083e0119}">
+      <Get Name="Get" Id="{2b982feb-0d84-41c0-abe3-46cc34b1cfbf}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="timeStopDelay" Id="{98c59042-ca4c-4f44-8c28-f373b10ac92f}">
+    <Property Name="timeStopDelay" Id="{2030aa07-a6ec-4610-9e05-3deae8fec0c4}">
       <Declaration><![CDATA[PROPERTY timeStopDelay : time]]></Declaration>
-      <Get Name="Get" Id="{ed3883d6-29af-4816-a5e2-7e024bb10173}">
+      <Get Name="Get" Id="{fff638ee-3248-42ce-891f-8528e94f0e40}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
-      <Set Name="Set" Id="{383608cf-0d74-4889-8221-a660a43385d4}">
+      <Set Name="Set" Id="{a044b2f8-951d-4d4f-b463-c1abf79e93c1}">
         <Declaration><![CDATA[]]></Declaration>
       </Set>
     </Property>
-    <Property Name="Torque" Id="{e8518a1b-62d1-4cb2-a493-47cf11788419}">
+    <Property Name="Torque" Id="{0549fdac-4477-47bd-ba27-28419cc2a94c}">
       <Declaration><![CDATA[PROPERTY Torque : reference to lreal]]></Declaration>
-      <Get Name="Get" Id="{7d135df5-4e0c-4d01-8e6d-fa93e7fcc582}">
+      <Get Name="Get" Id="{09588d8a-84f8-459c-a473-51d531c8f44a}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="TotalKwh" Id="{a9ded822-59d8-4dd4-82d1-8ecf2f70ed9d}">
+    <Property Name="TotalKwh" Id="{3679f91a-c54b-4a1c-9535-41531289de8d}">
       <Declaration><![CDATA[PROPERTY TotalKwh : reference to lreal]]></Declaration>
-      <Get Name="Get" Id="{b4168d34-1de9-4f82-a4ea-7c2d9018de8b}">
+      <Get Name="Get" Id="{7c0c5d42-33eb-4af3-a970-cdc605a595ac}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="Warning" Id="{3386cd62-3458-48fe-80e7-18b5eb41fa02}">
+    <Property Name="Warning" Id="{9352483a-3684-4375-9012-464ffef28de3}">
       <Declaration><![CDATA[PROPERTY Warning : reference to bool]]></Declaration>
-      <Get Name="Get" Id="{492a1412-1550-4b05-9a23-1763cc30b3f4}">
+      <Get Name="Get" Id="{602b78df-3505-43c9-9c6e-7e32825dabfd}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>

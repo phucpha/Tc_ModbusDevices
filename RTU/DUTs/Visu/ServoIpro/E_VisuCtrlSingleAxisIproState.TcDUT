@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_VisuCtrlSingleAxisIproState" Id="{a2db67ed-25e4-47c2-ab03-29f154d3876e}">
+    <Declaration><![CDATA[{attribute 'strict'}
+TYPE E_VisuCtrlSingleAxisIproState :
+(
+	VISU_CTRL_AXIS_WAIT_FOR_CMD 	:= 0,	(* *)
+	VISU_CTRL_AXIS_INIT				:= 10,	(*  *)
+	VISU_CTRL_AXIS_RESET			:= 20,	(*  *)
+	VISU_CTRL_AXIS_HOME				:= 30,	(*  *)
+	VISU_CTRL_AXIS_STOP				:= 40,	(*  *)
+	VISU_CTRL_AXIS_MOVE_ABSOLUTE	:= 50,	(*  *)
+	VISU_CTRL_AXIS_MOVE_TORQUE		:= 60,	(*  *)
+	VISU_CTRL_AXIS_ABORT			:= -10	(*  *)
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_TemperatureRelativeHumiditySensor_Emko" Id="{0bf38bf5-d33e-4f48-84e4-db484ef3ee1d}" SpecialFunc="None">
+    <Declaration><![CDATA[(*Odd or none parity bit only in model  PMDLx-x-0/0.1.1.x.x*)
+FUNCTION_BLOCK FB_TemperatureRelativeHumiditySensor_Emko EXTENDS FB_ModbusSlaveRtu
+
+VAR
+	lrTemperature	: LREAL;
+	lrRelativeHumidity : LREAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="Convert" Id="{5bb61268-8c5d-4e98-9923-f66dc8bd405e}">
+      <Declaration><![CDATA[METHOD Convert : BOOL
+VAR_INPUT
+	iRegionNo	:	INT;
+	pReadData	:	POINTER TO word;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE iRegionNo OF
+	0:
+		lrTemperature := WORD_TO_LREAL( pReadData[0])*0.01;
+		lrRelativeHumidity := WORD_TO_LREAL( pReadData[1])*0.1;
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="FirstCycle" Id="{b26eadeb-2397-4be7-a699-95ae1ee4a79f}">
+      <Declaration><![CDATA[METHOD FirstCycle // must be call once time 
+VAR_INPUT
+	sName : STRING;
+	iUnitID : BYTE ; // modbus address of the device : 1- 255
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SUPER^.FirstCycle( sName := sName,
+					iUnitID := iUnitID);
+arrAddressRead[0][0] := 0;
+arrAddressRead[0][1] := 2;
+arrAddressRead[0][2] := E_ModbusFunction.ReadInputRegisters;
+iNumAddRegionRead:= 1;
+iNumAddRegionWrite := 0;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="RelativeHumidity" Id="{27786f2a-dfae-44b2-9371-161830ee7879}">
+      <Declaration><![CDATA[PROPERTY RelativeHumidity : lreal]]></Declaration>
+      <Get Name="Get" Id="{b154d3f7-5429-4a10-8481-38209ff9d282}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[RelativeHumidity := lrRelativeHumidity;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Temperature" Id="{2f49b4d9-c379-4b1a-a23f-be051e0e6698}">
+      <Declaration><![CDATA[PROPERTY Temperature : lreal]]></Declaration>
+      <Get Name="Get" Id="{91c43331-e17f-4d5f-8db9-3e0490b10761}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Temperature := lrTemperature;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <LineIds Name="FB_TemperatureRelativeHumiditySensor_Emko">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TemperatureRelativeHumiditySensor_Emko.Convert">
+      <LineId Id="7" Count="1" />
+      <LineId Id="10" Count="1" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TemperatureRelativeHumiditySensor_Emko.FirstCycle">
+      <LineId Id="7" Count="6" />
+    </LineIds>
+    <LineIds Name="FB_TemperatureRelativeHumiditySensor_Emko.RelativeHumidity.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TemperatureRelativeHumiditySensor_Emko.Temperature.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

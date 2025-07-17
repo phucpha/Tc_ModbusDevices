@@ -4,6 +4,7 @@
     <Declaration><![CDATA[PROGRAM PGR_Test
 VAR
 	fbUniversalVfdModbusTest : FB_UniversalVFDModbus_Test;
+	fbvfd : FB_VFD_ABB_ACS480;
 END_VAR
 ]]></Declaration>
     <Implementation>

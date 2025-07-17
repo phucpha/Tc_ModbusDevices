@@ -1,0 +1,174 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_LoadCell_SwomoConfig" Id="{1d1c2917-2e33-49d0-a8a4-f9fc8b2b5a9f}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_LoadCell_SwomoConfig EXTENDS FB_ModbusSlaveRtu
+VAR
+	wAddRead : WORD;
+	wAddWrite : WORD;
+	wWriteLow : WORD;
+	wWriteHigh : WORD;
+	TmpData : TC3_Utilities_C.U_Word2Dint;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[arrAddressRead[0][0] := wAddRead;
+arrAddressRead[0][1] := 2;
+arrAddressRead[0][2] := TC_ModbusBase.E_ModbusFunction.ReadHoldingRegisters;
+iNumAddRegionRead := 1;
+
+arrAddressWrite[0][0] := wAddWrite;
+arrAddressWrite[0][1] := 2;
+arrAddressWrite[0][2] := wWriteHigh;
+arrAddressWrite[0][3] := wWriteLow;
+arrAddressWrite[0][10] := E_ModbusFunction.WriteMultipleRegisters;
+]]></ST>
+    </Implementation>
+    <Property Name="AddRead" Id="{d721851a-a112-4e3b-a313-8c38b9af5752}">
+      <Declaration><![CDATA[PROPERTY AddRead : WORD]]></Declaration>
+      <Get Name="Get" Id="{34b9d543-7766-4986-8c13-b18047169b65}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{ca46ddd0-ec40-4e12-95ec-277ee6fe8c80}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="AddWrite" Id="{4aca9a36-4f11-4635-9be4-95dff1330437}">
+      <Declaration><![CDATA[PROPERTY AddWrite : WORD]]></Declaration>
+      <Get Name="Get" Id="{df9940da-ba82-4ea9-a83f-a7b7cddf587a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{48a7beff-b4e0-4f0e-9d2a-8a925f85834f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="Convert" Id="{fd1c70aa-b9b6-4bc1-8b81-6051f9f359a0}">
+      <Declaration><![CDATA[METHOD Convert : BOOL
+VAR_INPUT
+	iRegionNo	: 	INT;
+	pReadData	:	POINTER TO word;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE iRegionNo OF
+	0:
+		TmpData.iWord[1] := pReadData[0];
+		TmpData.iWord[0] := pReadData[1];
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="FirstCycle" Id="{8ee8d0b9-38e0-40eb-96ec-fe04c6a68b42}">
+      <Declaration><![CDATA[METHOD FirstCycle // must be call once time 
+VAR_INPUT
+	sName : STRING;
+	iUnitID : BYTE ; // modbus address of the device : 1- 255
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.sName := sName;
+THIS^.iUnitID := iUnitID;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="WordWriteH" Id="{d8244fe1-3321-48ab-99bc-b980b2731908}">
+      <Declaration><![CDATA[PROPERTY WordWriteH : WORD]]></Declaration>
+      <Get Name="Get" Id="{289947c2-66df-46bd-97fe-d0008ce66d05}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{d81efe65-d68a-4b6a-be65-525a6f52427f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="WordWriteL" Id="{a4adb634-ee7c-4510-988d-54e502878505}">
+      <Declaration><![CDATA[PROPERTY WordWriteL : WORD]]></Declaration>
+      <Get Name="Get" Id="{29524662-3df3-4918-8d51-fa4b5bb725b8}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{7ec7a558-ee4a-4c1d-a76f-e4a1f9bdc4b8}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <LineIds Name="FB_LoadCell_SwomoConfig">
+      <LineId Id="17" Count="3" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="29" Count="1" />
+      <LineId Id="25" Count="1" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_SwomoConfig.AddRead.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_SwomoConfig.AddRead.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_SwomoConfig.AddWrite.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_SwomoConfig.AddWrite.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_SwomoConfig.Convert">
+      <LineId Id="7" Count="1" />
+      <LineId Id="13" Count="1" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_SwomoConfig.FirstCycle">
+      <LineId Id="7" Count="1" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="20" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_SwomoConfig.WordWriteH.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_SwomoConfig.WordWriteH.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_SwomoConfig.WordWriteL.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_SwomoConfig.WordWriteL.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

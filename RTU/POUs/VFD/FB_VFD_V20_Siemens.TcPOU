@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
-  <POU Name="FB_VFD_V20_Siemens" Id="{9df0b7e4-fc36-4d77-842a-f4d43e2fb1d6}" SpecialFunc="None">
+  <POU Name="FB_VFD_V20_Siemens" Id="{c8468d49-1c5d-49b3-82d3-288929adbb2d}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_VFD_V20_Siemens EXTENDS FB_UniversalVFDModbus
 VAR			
 	// status word
@@ -27,7 +27,7 @@ END_VAR
     <Implementation>
       <ST><![CDATA[SUPER^();]]></ST>
     </Implementation>
-    <Method Name="Convert" Id="{beeee062-daa5-4886-9582-6dec87db0947}">
+    <Method Name="Convert" Id="{b4aaea1f-f708-4f23-a1a0-e17ec596fe44}">
       <Declaration><![CDATA[METHOD Convert : BOOL
 VAR_INPUT
 	iRegionNo	:	INT;
@@ -88,7 +88,7 @@ END_CASE
 	]]></ST>
       </Implementation>
     </Method>
-    <Method Name="FirstCycle" Id="{d70c2ced-c572-48de-af56-e1271c4ff897}">
+    <Method Name="FirstCycle" Id="{f58f1367-9238-4317-9cbf-69e6ab4c8acc}">
       <Declaration><![CDATA[METHOD  FirstCycle 
 VAR_INPUT
 	sName : STRING;
@@ -127,7 +127,7 @@ arrAddressWrite[iCTRL_WORD][10]	:= E_ModbusFunction.WriteSingleRegister;
 // Frequency
 arrAddressWrite[iCTRL_FREQUENCY_WORD][0]	:= 100;
 arrAddressWrite[iCTRL_FREQUENCY_WORD][1] 	:= 1;
-arrAddressWrite[iCTRL_FREQUENCY_WORD][2]	:= LREAL_TO_WORD( FC_ScaleValue(	rangeRawMin := 0,
+arrAddressWrite[iCTRL_FREQUENCY_WORD][2]	:= LREAL_TO_WORD( F_ScaleValue(	rangeRawMin := 0,
 																				rangeRawMax := 50,
 																				RangeScaleMin :=0,
 																				RangeScaleMax := 16384,
@@ -137,20 +137,20 @@ arrAddressWrite[iCTRL_FREQUENCY_WORD][10]	:= E_ModbusFunction.WriteSingleRegiste
 iNumAddRegionWrite := 2;]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_Aborting" Id="{d7fbf362-ab7a-4080-818d-233364e606c1}">
+    <Method Name="MS_Aborting" Id="{837df778-d1a9-4846-b640-cc0de13d1429}">
       <Declaration><![CDATA[METHOD PROTECTED MS_Aborting]]></Declaration>
       <Implementation>
         <ST><![CDATA[arrAddressWrite[iCTRL_WORD][2] := VFD_CTRL_STOP_FREE;
 SUPER^.MS_Aborting();]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_RunForward" Id="{1d2da06d-db5b-4b7f-b33a-a065f0b01ec8}">
+    <Method Name="MS_RunForward" Id="{cafb0ba8-4643-4473-acc1-dcbc32181b21}">
       <Declaration><![CDATA[METHOD PROTECTED  MS_RunForward
 VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[arrAddressWrite[iCTRL_FREQUENCY_WORD][2] :=  LREAL_TO_WORD( FC_ScaleValue(	rangeRawMin := 0,
+        <ST><![CDATA[arrAddressWrite[iCTRL_FREQUENCY_WORD][2] :=  LREAL_TO_WORD( F_ScaleValue(	rangeRawMin := 0,
 																			rangeRawMax := 50,
 																			RangeScaleMin :=0,
 																			RangeScaleMax := 16384,
@@ -158,13 +158,13 @@ END_VAR
 SUPER^.MS_RunForward();]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_RunReverse" Id="{e4fd9a70-c6ed-40b4-ac4f-7501a54d43e8}">
+    <Method Name="MS_RunReverse" Id="{92ccf464-7081-4e82-821b-1465aec8f6fb}">
       <Declaration><![CDATA[METHOD PROTECTED  MS_RunReverse
 VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[arrAddressWrite[iCTRL_FREQUENCY_WORD][2] :=  LREAL_TO_WORD( FC_ScaleValue(	rangeRawMin := 0,
+        <ST><![CDATA[arrAddressWrite[iCTRL_FREQUENCY_WORD][2] :=  LREAL_TO_WORD( F_ScaleValue(	rangeRawMin := 0,
 																			rangeRawMax := 50,
 																			RangeScaleMin :=0,
 																			RangeScaleMax := 16384,

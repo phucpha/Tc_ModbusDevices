@@ -46,9 +46,9 @@
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
-    <Property Name="Error" Id="{808de606-9984-4e99-8cc3-a2b2355b9241}" FolderPath="Status\">
-      <Declaration><![CDATA[PROPERTY Error : bool]]></Declaration>
-      <Get Name="Get" Id="{7adc5102-15b2-46fb-9266-10fd258e75e0}">
+    <Property Name="Error" Id="{41a7854b-d106-4a4f-b550-956699843a93}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY Error : Reference to Bool]]></Declaration>
+      <Get Name="Get" Id="{cf5ebeb1-1f65-41c0-908b-aa65d1a49d3b}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
@@ -153,18 +153,6 @@ END_VAR
     <Property Name="PositionFeedBack" Id="{1b7147fc-2525-485b-b645-4e4d3feb4a2c}" FolderPath="Status\">
       <Declaration><![CDATA[PROPERTY PositionFeedBack : lreal]]></Declaration>
       <Get Name="Get" Id="{9eadf0d0-692b-4972-a7ec-339b1a7afe05}">
-        <Declaration><![CDATA[]]></Declaration>
-      </Get>
-    </Property>
-    <Property Name="PositionModeSelectionCmd" Id="{158c76f0-368a-4605-9ccc-e38800803ee2}" FolderPath="Parameters\">
-      <Declaration><![CDATA[PROPERTY PositionModeSelectionCmd : E_IPro_PositionCmdModeSelection]]></Declaration>
-      <Get Name="Get" Id="{93f8e9ca-5130-4d94-aaa0-0a3c4d795911}">
-        <Declaration><![CDATA[]]></Declaration>
-      </Get>
-    </Property>
-    <Property Name="PositionModeSelectionFeedback" Id="{c24fe8d4-34ee-4cb6-9485-406bfe199605}" FolderPath="Status\">
-      <Declaration><![CDATA[PROPERTY PositionModeSelectionFeedback : E_IPro_PositionCmdModeSelection]]></Declaration>
-      <Get Name="Get" Id="{b56a1597-09f6-4923-98b4-74b79ff0f84f}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>

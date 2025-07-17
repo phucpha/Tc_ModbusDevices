@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_VisuCtrlVfdFrame" Id="{9859445b-2cfd-4da1-b048-5e3dc3efbc45}">
+    <Declaration><![CDATA[TYPE ST_VisuCtrlVfdFrame :
+STRUCT
+	btnInit				: BOOL;
+	btnReset			: BOOL;
+	btnAbort			: BOOL;
+	btnRunForward		: BOOL;
+	btnRunReverse		: BOOL;
+	btnStop				: BOOL;
+	eState				: E_VFD_State;
+	sState				: STRING;
+	bError 				: BOOL;
+	eStatus				: E_VFD_Status;
+	sStatus 			: STRING;
+	errorID				: UDINT;
+	lrHzActual			: LREAL;
+	lrCurrent			: LREAL;
+	lrHzControl			: LREAL;
+	sName				: STRING;
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

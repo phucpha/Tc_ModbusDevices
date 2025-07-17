@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
-  <POU Name="FB_VFD_Mdriver" Id="{5223214a-1b30-4e2e-a904-0c24e7b24c15}" SpecialFunc="None">
+  <POU Name="FB_VFD_Mdriver" Id="{a6c61530-0033-4638-a4bf-9e8688f84f90}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_VFD_Mdriver EXTENDS FB_UniversalVFDModbus
 
 VAR
@@ -10,7 +10,7 @@ END_VAR]]></Declaration>
       <ST><![CDATA[//bError := eVfdStatus
 SUPER^();]]></ST>
     </Implementation>
-    <Method Name="Convert" Id="{5fb3dba2-a0b4-4ee1-83a3-fa8441b1b6d6}">
+    <Method Name="Convert" Id="{fafa2ce9-b6ea-4be6-a0f9-88bd4e57300b}">
       <Declaration><![CDATA[METHOD Convert : BOOL
 VAR_INPUT
 	iRegionNo	:	INT;
@@ -51,7 +51,7 @@ END_VAR
 		IF eFaultInfor <> E_VfdMdriverFaultInfor.Nofault THEN
 			eVfdStatus := VFD_STATUS_FAULT;
 		END_IF
-		IF iModbusErrorID = MODBUSERROR_NO_RESPONSE THEN
+		IF iModbusErrorID = MODBUSERROR_C_NO_RESPONSE THEN
 			eVfdStatus := VFD_STATUS_NOT_RESPOND;
 		END_IF
 		// important
@@ -63,7 +63,7 @@ END_VAR
 END_CASE]]></ST>
       </Implementation>
     </Method>
-    <Method Name="FirstCycle" Id="{f426d38f-e7ac-4186-81e6-7273f39d8836}">
+    <Method Name="FirstCycle" Id="{6a7a0af9-8902-465d-a9dd-89f6088e46db}">
       <Declaration><![CDATA[METHOD  FirstCycle 
 VAR_INPUT
 	sName : STRING;
@@ -104,7 +104,7 @@ arrAddressWrite[iCTRL_WORD][10]	:= E_ModbusFunction.WriteSingleRegister;
 arrAddressWrite[iCTRL_FREQUENCY_WORD][0]	:= 4096;
 arrAddressWrite[iCTRL_FREQUENCY_WORD][1]	:= 1;
 							(*MUST BE CARE FULL WHEN USE FLOATING POINT CONVERT*)
-arrAddressWrite[iCTRL_FREQUENCY_WORD][2]	:= LREAL_TO_WORD( FC_ScaleValue(	rangeRawMin := 0,
+arrAddressWrite[iCTRL_FREQUENCY_WORD][2]	:= LREAL_TO_WORD( F_ScaleValue(	rangeRawMin := 0,
 															rangeRawMax := 50,
 															RangeScaleMin :=0,
 															RangeScaleMax := 10000,
@@ -117,21 +117,21 @@ iNumAddRegionWrite := 2;
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_Aborting" Id="{17047c0d-941e-4b71-8ea4-5fa97f7294f2}">
+    <Method Name="MS_Aborting" Id="{3105377d-b85b-4bca-a7cf-3ef8c0a5e8bb}">
       <Declaration><![CDATA[METHOD PROTECTED  MS_Aborting]]></Declaration>
       <Implementation>
         <ST><![CDATA[arrAddressWrite[iCTRL_WORD][2]	:= VFD_CTRL_STOP_FREE;
 SUPER^.MS_Aborting();]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_RunForward" Id="{fcf828fe-6b6d-4c5b-9524-28ccd4e3e7e3}">
+    <Method Name="MS_RunForward" Id="{628dc59e-846e-40d0-9cf1-88b6513e9da9}">
       <Declaration><![CDATA[METHOD PROTECTED  MS_RunForward
 VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[arrAddressWrite[iCTRL_FREQUENCY_WORD][2] :=  LREAL_TO_WORD( 
-															FC_ScaleValue(	rangeRawMin := 0,
+															F_ScaleValue(	rangeRawMin := 0,
 																			rangeRawMax := 50,
 																			RangeScaleMin := 0,
 																			RangeScaleMax := 10000,
@@ -140,14 +140,14 @@ END_VAR
 SUPER^.MS_RunForward();]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MS_RunReverse" Id="{e8f66053-2fc5-43fc-84ae-6cfb3c721d04}">
+    <Method Name="MS_RunReverse" Id="{f2f7d6df-b61b-4d5f-95b3-bdaa7e913b8f}">
       <Declaration><![CDATA[METHOD PROTECTED  MS_RunReverse
 VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[arrAddressWrite[iCTRL_FREQUENCY_WORD][2] :=  LREAL_TO_WORD( 
-															FC_ScaleValue(	rangeRawMin := 0,
+															F_ScaleValue(	rangeRawMin := 0,
 																			rangeRawMax := 50,
 																			RangeScaleMin := 0,
 																			RangeScaleMax := 10000,
