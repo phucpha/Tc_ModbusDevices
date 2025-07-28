@@ -7,10 +7,16 @@ VAR
 	lrValueGram : LREAL;
 	lrValueKg : LREAL;
 	TmpData : U_Word2Dint;
+	bEnableReallyError : BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[SUPER^();]]></ST>
+      <ST><![CDATA[tonConfirmReallyError(
+	IN := bModbusError,
+	PT := timeConfirmReallyError,
+	Q => bReallyError 
+);
+SUPER^();]]></ST>
     </Implementation>
     <Method Name="Convert" Id="{f612aa90-cf6b-4e46-acd4-79a4601d15a3}">
       <Declaration><![CDATA[METHOD Convert : BOOL
@@ -29,6 +35,25 @@ END_VAR
 END_CASE]]></ST>
       </Implementation>
     </Method>
+    <Property Name="EnableReallyError" Id="{2decdeb6-2b10-4472-9b77-4051f7655889}">
+      <Declaration><![CDATA[PROPERTY EnableReallyError : bool]]></Declaration>
+      <Get Name="Get" Id="{8549703a-5b10-49ec-994b-e05383b23b6c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[EnableReallyError := bEnableReallyError;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{ac143162-8e09-46fe-98c2-849cc191349a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bEnableReallyError := EnableReallyError;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
     <Method Name="FirstCycle" Id="{21c18c7d-3744-4286-a670-437cfb3ae6c5}">
       <Declaration><![CDATA[METHOD FirstCycle // must be call once time 
 VAR_INPUT
@@ -69,6 +94,8 @@ END_VAR
       </Get>
     </Property>
     <LineIds Name="FB_LoadCell_Smowo">
+      <LineId Id="23" Count="3" />
+      <LineId Id="22" Count="0" />
       <LineId Id="9" Count="0" />
     </LineIds>
     <LineIds Name="FB_LoadCell_Smowo.Convert">
@@ -77,6 +104,12 @@ END_VAR
       <LineId Id="12" Count="0" />
       <LineId Id="20" Count="0" />
       <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_Smowo.EnableReallyError.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_Smowo.EnableReallyError.Set">
+      <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_LoadCell_Smowo.FirstCycle">
       <LineId Id="7" Count="0" />
