@@ -305,7 +305,8 @@ arrAddressWrite[10][2] :=  LREAL_TO_WORD(ABS(lrMaxTorque*10));]]></ST>
       </Set>
     </Property>
     <Method Name="MR_Abort" Id="{c01a224b-502a-4fb8-86bb-578474547fce}" FolderPath="Requests\">
-      <Declaration><![CDATA[METHOD MR_Abort : BOOL
+      <Declaration><![CDATA[METHOD MR_Abort : BOOL // THIS IS REQUEST ABORT. => ACTIVE = False
+
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF eState >= IPRO_INITIALIZING THEN
@@ -953,7 +954,7 @@ VAR
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[CASE eState OF
-		IPRO_UNINITIALIZED:
+	IPRO_UNINITIALIZED:
 		MS_Uninitalized();
 		
 	IPRO_INITIALIZING:
@@ -1159,16 +1160,7 @@ END_VAR
       <LineId Id="7" Count="0" />
     </LineIds>
     <LineIds Name="FB_IPRO_ModbusRTU.MR_Init">
-      <LineId Id="2" Count="1" />
-      <LineId Id="19" Count="0" />
-      <LineId Id="12" Count="0" />
-      <LineId Id="5" Count="0" />
-      <LineId Id="11" Count="0" />
-      <LineId Id="7" Count="0" />
-      <LineId Id="20" Count="0" />
-      <LineId Id="8" Count="0" />
-      <LineId Id="13" Count="0" />
-      <LineId Id="9" Count="1" />
+      <LineId Id="5" Count="11" />
       <LineId Id="4" Count="0" />
     </LineIds>
     <LineIds Name="FB_IPRO_ModbusRTU.MR_MoveAbsolute">

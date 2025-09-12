@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_ASDAB3_Status" Id="{ef9205af-530d-4013-ab23-1399f843044d}">
+    <Declaration><![CDATA[{attribute 'strict'}
+{attribute 'to_string'}
+TYPE E_ASDAB3_Status :
+(
+	ASDAB3_STATUS_NOT_RESPOND,
+	ASDAB3_STATUS_READY,
+	ASDAB3_STATUS_ACTIVE,
+	ASDAB3_STATUS_FAULT
+	
+)INT := ASDAB3_STATUS_NOT_RESPOND;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

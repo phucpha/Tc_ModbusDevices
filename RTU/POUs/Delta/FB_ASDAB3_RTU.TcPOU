@@ -1,0 +1,450 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_ASDAB3_RTU" Id="{7bdd2ce4-5f9a-4631-959f-df0649514377}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_ASDAB3_RTU EXTENDS FB_ModbusSlaveRtu
+VAR
+	eState : E_ASDAB3_State;
+	bBusy : BOOL;
+	bInit : BOOL;
+	bInited : BOOL;
+	bActive : BOOL;
+	eStatus : E_ASDAB3_Status;
+	fPositionFB : LREAL;
+	fVelocityFB : LREAL;								// Unit: rpm
+	fTorqueFB : LREAL;									// %
+	fPositionCMD : LREAL;	
+	nFaultCode	: INT;
+	TempData_w2di	: ARRAY[0..2] OF U_Word2Dint;
+	TempData_w : WORD;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[SUPER^();
+StateMachine();]]></ST>
+    </Implementation>
+    <Folder Name="MR" Id="{944ec9b4-8025-4605-ab1b-a15596047c6c}" />
+    <Folder Name="MS" Id="{bcb77bc9-36f9-4c14-ad25-95db4d61ba13}" />
+    <Folder Name="Status" Id="{ca1a44a3-914d-4ebb-b2d7-0aa2d4303451}" />
+    <Property Name="Active" Id="{ce5ec9f4-b294-43a2-a99e-72c65be75d32}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY Active : bool]]></Declaration>
+      <Get Name="Get" Id="{924b0c43-4c58-47a4-9386-2d1182edf158}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Active := bActive;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Busy" Id="{18069665-9822-4578-a5e5-cb85a412bc2f}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY Busy : bool]]></Declaration>
+      <Get Name="Get" Id="{08a27e36-96ca-4f44-bdb4-9982c2e145fb}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Busy := bBusy;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="Convert" Id="{c2c16085-ade9-48b8-9689-ed8cdf970e8d}">
+      <Declaration><![CDATA[METHOD Convert : BOOL
+VAR_INPUT
+	iRegionNo	:	INT;
+	pReadData	:	POINTER TO word;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+CASE iRegionNo OF 
+	0:	// positionFB, SpeedFB, and Torque FB
+		TempData_w2di[0].iWord[0] := pReadData[0];
+		TempData_w2di[0].iWord[1] := pReadData[1];
+		TempData_w2di[1].iWord[0] := pReadData[2];
+		TempData_w2di[1].iWord[1] := pReadData[3];
+		TempData_w2di[2].iWord[0] := pReadData[4];
+		TempData_w2di[2].iWord[1] := pReadData[5];
+		fPositionFB := DINT_TO_LREAL(TempData_w2di[0].idInt);
+		fVelocityFB := 0.1*DINT_TO_LREAL(TempData_w2di[1].idInt);
+		fTorqueFB := 0.1*DINT_TO_LREAL(TempData_w2di[2].idInt);
+		
+	1:	// DO Register
+		TempData_w := pReadData[0];
+		IF ModbusErrorID = MODBUSERROR_NO_RESPONSE THEN
+			eStatus := ASDAB3_STATUS_NOT_RESPOND;
+		ELSIF TempData_w.4 THEN
+			eStatus := ASDAB3_STATUS_FAULT;
+		ELSIF TempData_w.0 THEN
+			eStatus := ASDAB3_STATUS_READY;
+		ELSIF TempData_w.5 THEN
+			eStatus := ASDAB3_STATUS_ACTIVE;
+		END_IF			
+		
+	
+	
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="ErrorID" Id="{42de6558-78de-4dd3-bf04-5aacd5e26460}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY ErrorID : REFERENCE TO INT
+]]></Declaration>
+      <Get Name="Get" Id="{0f07ec2d-6c61-47bd-ae54-7377bde8a6a8}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[errorid ref= nFaultCode;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="InPosition" Id="{88018cac-97af-4b1b-8f48-7ac2c904444f}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY InPosition : bool]]></Declaration>
+      <Get Name="Get" Id="{4efaf9db-0bbe-40f9-990c-06372fb23ff5}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="IsStop" Id="{45e2adc2-7c16-485a-b88c-85de616b1808}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY IsStop : bool]]></Declaration>
+      <Get Name="Get" Id="{c37099d5-16ab-437e-92b9-1f4b95eda5f5}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="MR_Abort" Id="{9915d01b-bbd3-4354-a629-9317fc233e21}" FolderPath="MR\">
+      <Declaration><![CDATA[METHOD MR_Abort : BOOL // THIS IS REQUEST ABORT. => ACTIVE = False
+
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_Init" Id="{7ca5025e-e8bb-4736-82b2-04545a0909fd}" FolderPath="MR\">
+      <Declaration><![CDATA[METHOD MR_Init : BOOL]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF eState = ASDAB3_UNINITIALIZED THEN
+	bInit := TRUE;
+	bInited := FALSE;
+	bBusy := TRUE;
+	MR_Init := FALSE;
+	eState := ASDAB3_INITIALIZING;
+ELSIF eState = ASDAB3_READY_INITIALIZED THEN
+	bInited := True;
+	bInit := FALSE;
+	bBusy := FALSE;
+	MR_Init := TRUE;
+	
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_MoveAbsolute" Id="{87f73bf7-8dac-4507-a8cb-8fca6887c83c}" FolderPath="MR\">
+      <Declaration><![CDATA[METHOD MR_MoveAbsolute : BOOL // control mode must have Position Mode
+VAR_INPUT
+	lrAbsolutePosition : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_Reset" Id="{c693223d-4977-4b6e-826e-480173adf595}" FolderPath="MR\">
+      <Declaration><![CDATA[METHOD MR_Reset : BOOL// can't not use this method because i didn't find way to reset
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Aborting" Id="{088a2ebc-58b1-4f2c-be44-14f0b7dccc09}" FolderPath="MS\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Aborting// still remain all the params set before init
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Idle" Id="{3f833b86-9014-4120-8cfa-25f3d00f7dc7}" FolderPath="MS\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Idle
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Initializing" Id="{562d926a-91da-4ef7-88ad-cac4d8dd4f76}" FolderPath="MS\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Initializing
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[arrAddressWrite[1][2] := 2#11;
+IF eStatus = ASDAB3_STATUS_ACTIVE THEN
+	eState := ASDAB3_READY_INITIALIZED;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_MoveAbsolute" Id="{ce45af5c-d840-4ade-b299-c6b6e376d6d0}" FolderPath="MS\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_MoveAbsolute
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_MoveAbsoluteDone" Id="{744f3b1f-cfe4-47c9-9fa1-86f4952b3bfe}" FolderPath="MS\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_MoveAbsoluteDone
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_ReadyInitialized" Id="{464b8d82-5009-4168-a158-6cbabb711e39}" FolderPath="MS\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_ReadyInitialized
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Reset" Id="{c6a785e2-c413-4c99-b762-e02831f57fae}" FolderPath="MS\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Reset
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_ResetDone" Id="{38ccce8c-e844-4455-8a5f-e24ff30b51db}" FolderPath="MS\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_ResetDone
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Uninitalized" Id="{4fa74425-b155-4722-8999-3c8f5d75d7b4}" FolderPath="MS\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Uninitalized
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[bBusy := FALSE;
+// Read
+arrAddressRead[0][0] := 16#12;	// monitoring position, speed, torque : P0.009
+arrAddressRead[0][1] := 6;
+arrAddressRead[0][2] := E_ModbusFunction.ReadHoldingRegisters;
+
+arrAddressRead[1][0] := 16#5C; // Regiter Output: P0.046
+arrAddressRead[1][1] := 1;
+arrAddressRead[1][2] := E_ModbusFunction.ReadHoldingRegisters;
+
+arrAddressRead[2][0] := 16#02; // errorID: P0.001
+arrAddressRead[2][1] := 1;
+arrAddressRead[2][2] := E_ModbusFunction.ReadHoldingRegisters;
+iNumAddRegionRead := 3;
+
+// write
+arrAddressWrite[0][0] := 16#706; // Position cmd PR51 data
+arrAddressWrite[0][1] := 2;
+arrAddressWrite[0][2] := 0;
+arrAddressWrite[0][10]	:= E_ModbusFunction.WriteMultipleRegisters;
+(*	// DI register cmd:
+	bit1: On : level Active
+	bit2: reset alarm : rise trig
+	bit3: execute run abs position
+*)
+arrAddressWrite[1][0] := 16#40E;
+arrAddressWrite[1][1] := 1;
+arrAddressWrite[1][2] := 0;
+arrAddressWrite[1][10] := E_ModbusFunction.WriteSingleRegister;
+
+iNumAddRegionWrite := 0;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="PositionCmd" Id="{9abeab55-b77c-49ff-ab6e-596ba093758f}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY PositionCmd : lreal]]></Declaration>
+      <Get Name="Get" Id="{84e83cd0-56af-47cb-80d2-4bf661192527}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[PositionCmd := fPositionCMD;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="StateMachine" Id="{d7c30c34-6f72-4195-b9ee-9a5312f00a8f}" FolderPath="MS\">
+      <Declaration><![CDATA[METHOD PROTECTED StateMachine
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE eState OF
+	ASDAB3_UNINITIALIZED :
+		MS_Uninitalized();
+		
+	ASDAB3_INITIALIZING	:
+		MS_Initializing();
+		
+	ASDAB3_READY_INITIALIZED :
+		MS_ReadyInitialized();
+		
+	ASDAB3_IDLE	:
+		MS_Idle();
+		
+	ASDAB3_MOVE_ABSOLUTE :
+		MS_MoveAbsolute();
+		
+	ASDAB3_MOVE_ABSOLUTE_DONE :
+		MS_MoveAbsoluteDone();
+		
+	ASDAB3_RESET :
+		MS_Reset();
+		
+	ASDAB3_RESET_DONE :
+		MS_ResetDone();
+		
+	ASDAB3_ABORTING :
+		MS_Aborting();
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_ASDAB3_RTU">
+      <LineId Id="30" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.Active.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.Busy.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.Convert">
+      <LineId Id="124" Count="0" />
+      <LineId Id="7" Count="1" />
+      <LineId Id="132" Count="4" />
+      <LineId Id="131" Count="0" />
+      <LineId Id="119" Count="0" />
+      <LineId Id="118" Count="0" />
+      <LineId Id="126" Count="1" />
+      <LineId Id="137" Count="1" />
+      <LineId Id="128" Count="2" />
+      <LineId Id="139" Count="1" />
+      <LineId Id="142" Count="3" />
+      <LineId Id="125" Count="0" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="78" Count="0" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="20" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.ErrorID.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.InPosition.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.IsStop.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.MR_Abort">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.MR_Init">
+      <LineId Id="5" Count="11" />
+      <LineId Id="4" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.MR_MoveAbsolute">
+      <LineId Id="8" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.MR_Reset">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.MS_Aborting">
+      <LineId Id="11" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.MS_Idle">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.MS_Initializing">
+      <LineId Id="39" Count="1" />
+      <LineId Id="12" Count="1" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.MS_MoveAbsolute">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.MS_MoveAbsoluteDone">
+      <LineId Id="7" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.MS_ReadyInitialized">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.MS_Reset">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.MS_ResetDone">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.MS_Uninitalized">
+      <LineId Id="123" Count="0" />
+      <LineId Id="127" Count="0" />
+      <LineId Id="6" Count="0" />
+      <LineId Id="23" Count="5" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="135" Count="1" />
+      <LineId Id="129" Count="0" />
+      <LineId Id="45" Count="0" />
+      <LineId Id="128" Count="0" />
+      <LineId Id="46" Count="5" />
+      <LineId Id="132" Count="2" />
+      <LineId Id="131" Count="0" />
+      <LineId Id="52" Count="2" />
+      <LineId Id="130" Count="0" />
+      <LineId Id="114" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.PositionCmd.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.StateMachine">
+      <LineId Id="5" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="16" Count="1" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="18" Count="1" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="20" Count="1" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="22" Count="1" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="24" Count="1" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="26" Count="1" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="28" Count="1" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="30" Count="1" />
+      <LineId Id="6" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

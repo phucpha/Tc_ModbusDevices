@@ -3,13 +3,22 @@
   <POU Name="POU" Id="{b05d93c8-4a6b-4f07-aafd-3dcd31964579}" SpecialFunc="None">
     <Declaration><![CDATA[PROGRAM POU
 VAR
+	IPRO : FB_IPRO_ModbusRTU;
+	asda : FB_ASDAB3_RTU;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[]]></ST>
+      <ST><![CDATA[IPRO.FirstCycle(
+	sName := 'ipro 1',
+	iUnitID := 5
+);
+asda();]]></ST>
     </Implementation>
     <LineIds Name="POU">
-      <LineId Id="5" Count="0" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="26" Count="1" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="33" Count="0" />
     </LineIds>
   </POU>
 </TcPlcObject>

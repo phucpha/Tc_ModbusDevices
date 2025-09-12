@@ -19,7 +19,7 @@
     <Company>NewEngineer</Company>
     <Released>false</Released>
     <Title>Tc_ModbusDevices</Title>
-    <ProjectVersion>0.1.0.1</ProjectVersion>
+    <ProjectVersion>0.2.0.0</ProjectVersion>
     <LibraryCategories>
       <LibraryCategory>
         <Id>{34b615cd-45ba-4d29-985a-190ea3e88038}</Id>
@@ -37,6 +37,12 @@
     <DocFormat>reStructuredText</DocFormat>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="DUTs\Delta\E_ASDAB3_State.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\Delta\E_ASDAB3_Status.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="DUTs\ServoIpro\E_IProCtrlMode.TcDUT">
       <SubType>Code</SubType>
     </Compile>
@@ -78,6 +84,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POU.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Delta\FB_ASDAB3_RTU.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\EmkoTemperature\FB_TemperatureRelativeHumiditySensor_Emko.TcPOU">
@@ -125,6 +134,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="DUTs" />
+    <Folder Include="DUTs\Delta" />
     <Folder Include="DUTs\Visu" />
     <Folder Include="DUTs\ServoIpro" />
     <Folder Include="DUTs\VFD" />
@@ -133,6 +143,7 @@
     <Folder Include="GVLs" />
     <Folder Include="POUs\EmkoTemperature" />
     <Folder Include="POUs\Ipro" />
+    <Folder Include="POUs\Delta" />
     <Folder Include="POUs\Smowo" />
     <Folder Include="POUs\VFD" />
     <Folder Include="TEST" />

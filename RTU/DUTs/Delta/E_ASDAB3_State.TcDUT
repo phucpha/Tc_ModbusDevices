@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_ASDAB3_State" Id="{990f3738-9a57-4e5e-b036-f32692d7bab0}">
+    <Declaration><![CDATA[{attribute 'strict'}
+TYPE E_ASDAB3_State :
+(
+	ASDAB3_UNINITIALIZED := 0,
+	ASDAB3_INITIALIZING	:= 10,
+	ASDAB3_READY_INITIALIZED := 20,
+	ASDAB3_IDLE	:= 25,
+	ASDAB3_MOVE_ABSOLUTE := 30,
+	ASDAB3_MOVE_ABSOLUTE_DONE := 40,
+	ASDAB3_RESET := 50,
+	ASDAB3_RESET_DONE := 60,
+	ASDAB3_ABORTING := -10
+	
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

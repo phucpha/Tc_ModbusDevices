@@ -7,19 +7,19 @@ TYPE E_IPro_State :
 (
 	IPRO_UNINITIALIZED		:= 0,	(* Axis is not prepared to work - power is off *)
 	IPRO_INITIALIZING		:= 10,	(* Axis is preparing to power - reset FB and power on *)
-	IPRO_READY_INITIALIZED		:= 20,	(*  *)
+	IPRO_READY_INITIALIZED	:= 20,	(*  *)
 	IPRO_IDLE				:= 25,// MOVE DONE TO HERE
-	IPRO_HOME			:= 30,	(* Axis is homing to reference point *)
+	IPRO_HOME				:= 30,	(* Axis is homing to reference point *)
 	IPRO_HOME_DONE			:= 40,	(* Axis homing procedure has finished - fererence position has been found *)
 	IPRO_MOVE_ABSOLUTE		:= 50,	(* Axis is moving to absolute position - discrete motion *)
-	IPRO_MOVE_ABSOLUTE_DONE		:= 60,	(* Axis movement to absolute position finished *)
-	IPRO_MOVE_TORQUE	:= 70,
-	IPRO_MOVE_TORQUE_DONE	:= 80,
+	IPRO_MOVE_ABSOLUTE_DONE	:= 60,	(* Axis movement to absolute position finished *)
+	IPRO_MOVE_TORQUE 		:= 70,
+	IPRO_MOVE_TORQUE_DONE 	:= 80,
 	//IPRO_MOVE_VELOCITY		:= 90,
 	//IPRO_MOVE_VELOCITY_DONE	:= 100
-	IPRO_STOP			:= 90,	(* Axis is stopping *)
+	IPRO_STOP				:= 90,	(* Axis is stopping *)
 	IPRO_STOP_DONE			:= 100,	(* Axis stopped *)
-	IPRO_RESET			:= 110,	(* Axis is resseting all function blocks and occured errors *)
+	IPRO_RESET				:= 110,	(* Axis is resseting all function blocks and occured errors *)
 	IPRO_RESET_DONE			:= 120,	(* Axis reset procedure done *)
 	IPRO_ABORTING			:= -10	(* Aborting *)
 );
