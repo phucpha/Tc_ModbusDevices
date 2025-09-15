@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<TcSmItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4024.56" ClassName="CDevComPortDef" SubType="11">
+	<Device Id="4" DevType="11" AmsPort="28676">
+		<Name>__FILENAME__</Name>
+		<AddressInfo>
+			<Ccat>
+				<Address>268435456</Address>
+				<Offset>196608</Offset>
+				<Size>512</Size>
+				<BaseAddr>0</BaseAddr>
+				<BusNo>65535</BusNo>
+				<SlotNo>0</SlotNo>
+			</Ccat>
+		</AddressInfo>
+		<Image Id="4" AddrType="1" ImageType="1">
+			<Name>Image</Name>
+		</Image>
+		<Serial Baud="19200" Parity="1" StopBit="1" RsType="2" UPSDisableSysShutdown="true" WaitTimeToShutdown="60" DataSize="64" BufSize="4096" DataBit="8" FifoSize="16" Timeout="300"/>
+	</Device>
+</TcSmItem>

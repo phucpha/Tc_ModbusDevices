@@ -8,18 +8,38 @@ VAR
 	bInit : BOOL;
 	bInited : BOOL;
 	bActive : BOOL;
+	bIsStop : BOOL;
+	bHomed : BOOL;
+	bHome : BOOL;
+	bReset : BOOL;
+	bAlarm : BOOL;
+	bAbort : BOOL;
+	bMoveAbsolute : BOOL;
 	eStatus : E_ASDAB3_Status;
 	fPositionFB : LREAL;
 	fVelocityFB : LREAL;								// Unit: rpm
 	fTorqueFB : LREAL;									// %
 	fPositionCMD : LREAL;	
+	fHomePosition : LREAL;
 	nFaultCode	: INT;
 	TempData_w2di	: ARRAY[0..2] OF U_Word2Dint;
-	TempData_w : WORD;
+	uPositionCmd : U_Word2Dint;
+	wDoStatus : WORD;
+	//tonClock : TON;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[SUPER^();
+bActive := eState>=IPRO_READY_INITIALIZED;
+bError := bModbusError OR nFaultCode<>0;
+CASE eState OF
+	asdab3_INITIALIZING..asdab3_RESET_DONE, asdab3_ABORTING:
+		tonConfirmReallyError(
+			IN := bError OR bModbusError,
+			PT := timeConfirmReallyError,
+			Q => bReallyError 
+		);
+END_CASE
 StateMachine();]]></ST>
     </Implementation>
     <Folder Name="MR" Id="{944ec9b4-8025-4605-ab1b-a15596047c6c}" />
@@ -69,17 +89,19 @@ CASE iRegionNo OF
 		fTorqueFB := 0.1*DINT_TO_LREAL(TempData_w2di[2].idInt);
 		
 	1:	// DO Register
-		TempData_w := pReadData[0];
+		wDoStatus := pReadData[0];
 		IF ModbusErrorID = MODBUSERROR_NO_RESPONSE THEN
 			eStatus := ASDAB3_STATUS_NOT_RESPOND;
-		ELSIF TempData_w.4 THEN
+		ELSIF wDoStatus.6 THEN
 			eStatus := ASDAB3_STATUS_FAULT;
-		ELSIF TempData_w.0 THEN
+		ELSIF wDoStatus.0 AND NOT wDoStatus.1 THEN
 			eStatus := ASDAB3_STATUS_READY;
-		ELSIF TempData_w.5 THEN
+		ELSIF wDoStatus.1 THEN
 			eStatus := ASDAB3_STATUS_ACTIVE;
-		END_IF			
-		
+		END_IF
+		bHomed := wDoStatus.8;
+	2:
+		nFaultCode := WORD_TO_INT(pReadData[0]);
 	
 	
 END_CASE
@@ -98,6 +120,17 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
+    <Property Name="Homed" Id="{af3ac53b-61f1-4d70-b085-5a8abd96aeca}" FolderPath="Status\">
+      <Declaration><![CDATA[PROPERTY Homed : bool]]></Declaration>
+      <Get Name="Get" Id="{d8b09f81-e1b8-4f7f-a263-47d049fe977a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Homed := bHomed;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
     <Property Name="InPosition" Id="{88018cac-97af-4b1b-8f48-7ac2c904444f}" FolderPath="Status\">
       <Declaration><![CDATA[PROPERTY InPosition : bool]]></Declaration>
       <Get Name="Get" Id="{4efaf9db-0bbe-40f9-990c-06372fb23ff5}">
@@ -105,7 +138,11 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[]]></ST>
+          <ST><![CDATA[Inposition := F_CheckInRange(
+					lrHighLimit := fPositionCMD+5,
+					lrLowLimit := fPositionCMD-5,
+					lrValue := fPositionFB
+				);]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -116,7 +153,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[]]></ST>
+          <ST><![CDATA[IsStop := bIsStop;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -125,7 +162,38 @@ END_VAR
 
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[]]></ST>
+        <ST><![CDATA[IF eState >= ASDAB3_INITIALIZING THEN
+	bAbort := TRUE;
+	MR_Abort := FALSE;
+	bBusy := TRUE;
+	eState := ASDAB3_ABORTING;
+ELSIF eState = ASDAB3_UNINITIALIZED THEN
+	bAbort := FALSE;
+	MR_Abort := TRUE;
+	bBusy := False;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_Home" Id="{6eadc91d-8091-4708-9949-c97556344482}" FolderPath="MR\">
+      <Declaration><![CDATA[METHOD MR_Home : BOOL	// use for homing only, not use for move to position.
+VAR_INPUT
+	lrHomePosition : LREAL;		//	Absolute reference position to which the axis is set after homing.
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF eState = ASDAB3_IDLE AND NOT bHomed THEN 
+	bHome := TRUE;
+	bBusy := TRUE;  
+	MR_Home := FALSE;
+ 	eState := ASDAB3_HOME;
+	fHomePosition := lrHomePosition;
+	
+ELSIF eState = ASDAB3_HOME_DONE THEN
+	bHome := FALSE;
+	bBusy := FALSE;
+	MR_Home := TRUE;
+END_IF]]></ST>
       </Implementation>
     </Method>
     <Method Name="MR_Init" Id="{7ca5025e-e8bb-4736-82b2-04545a0909fd}" FolderPath="MR\">
@@ -153,14 +221,38 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[]]></ST>
+        <ST><![CDATA[IF eState = ASDAB3_IDLE 
+AND NOT F_CheckInRange(
+			lrHighLimit := fPositionFB+5,
+			lrLowLimit := fPositionfb-5,
+			lrValue := lrAbsolutePosition
+		)										
+THEN
+	fPositionCMD := lrAbsolutePosition;
+	MR_MoveAbsolute := FALSE;
+	bBusy := TRUE;
+	bMoveAbsolute := TRUE;
+	eState := ASDAB3_MOVE_ABSOLUTE;
+
+ELSIF eState = ASDAB3_MOVE_ABSOLUTE_DONE THEN
+	bBusy := FALSE;
+	bMoveAbsolute := FALSE;
+	MR_MoveAbsolute := TRUE;
+END_IF]]></ST>
       </Implementation>
     </Method>
     <Method Name="MR_Reset" Id="{c693223d-4977-4b6e-826e-480173adf595}" FolderPath="MR\">
       <Declaration><![CDATA[METHOD MR_Reset : BOOL// can't not use this method because i didn't find way to reset
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[]]></ST>
+        <ST><![CDATA[IF bError AND eState<>ASDAB3_RESET THEN
+	bReset := TRUE;
+	MR_Reset := FALSE;
+	eState := ASDAB3_RESET;
+ELSIF eState = ASDAB3_RESET_DONE THEN
+	bReset := FALSE;
+	MR_Reset := TRUE;	
+END_IF]]></ST>
       </Implementation>
     </Method>
     <Method Name="MS_Aborting" Id="{088a2ebc-58b1-4f2c-be44-14f0b7dccc09}" FolderPath="MS\">
@@ -169,9 +261,38 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
+        <ST><![CDATA[arrAddressWrite[1][2] := 2#0;
+fPositionCMD := 0;
+IF NOT wDoStatus.1 THEN
+	eState := ASDAB3_UNINITIALIZED;
+END_IF
+
+
 
 ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Home" Id="{ebc03257-76f2-4a05-acfc-20baa18bb82e}" FolderPath="MS\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Home
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[arrAddressWrite[1][2].3 := TRUE;
+IF bHomed THEN
+	eState := ASDAB3_HOME_DONE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_HomeDone" Id="{8ec539d1-139b-4888-9a5d-f6860065708a}" FolderPath="MS\">
+      <Declaration><![CDATA[METHOD PROTECTED  MS_HomeDone
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT bHome THEN
+	eState := ASDAB3_IDLE;
+END_IF]]></ST>
       </Implementation>
     </Method>
     <Method Name="MS_Idle" Id="{3f833b86-9014-4120-8cfa-25f3d00f7dc7}" FolderPath="MS\">
@@ -180,7 +301,9 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[;]]></ST>
+        <ST><![CDATA[arrAddressWrite[1][2].3 := FALSE;
+arrAddressWrite[1][2].2 := FALSE;
+bBusy := false;]]></ST>
       </Implementation>
     </Method>
     <Method Name="MS_Initializing" Id="{562d926a-91da-4ef7-88ad-cac4d8dd4f76}" FolderPath="MS\">
@@ -201,7 +324,13 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[]]></ST>
+        <ST><![CDATA[uPositionCmd.idInt := LREAL_TO_DINT(fPositionCMD);
+arrAddressWrite[0][2] := uPositionCmd.iWord[0];
+arrAddressWrite[0][3] := uPositionCmd.iWord[1];
+arrAddressWrite[1][2].2 := TRUE;
+IF InPosition THEN
+	estate := ASDAB3_MOVE_ABSOLUTE_DONE;
+END_IF]]></ST>
       </Implementation>
     </Method>
     <Method Name="MS_MoveAbsoluteDone" Id="{744f3b1f-cfe4-47c9-9fa1-86f4952b3bfe}" FolderPath="MS\">
@@ -210,7 +339,9 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[]]></ST>
+        <ST><![CDATA[IF NOT bMoveAbsolute THEN
+	estate := ASDAB3_IDLE;
+END_IF]]></ST>
       </Implementation>
     </Method>
     <Method Name="MS_ReadyInitialized" Id="{464b8d82-5009-4168-a158-6cbabb711e39}" FolderPath="MS\">
@@ -219,7 +350,10 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[]]></ST>
+        <ST><![CDATA[arrAddressWrite[1][2] := 2#01;
+IF NOT bInit THEN
+	eState := ASDAB3_IDLE;
+END_IF]]></ST>
       </Implementation>
     </Method>
     <Method Name="MS_Reset" Id="{c6a785e2-c413-4c99-b762-e02831f57fae}" FolderPath="MS\">
@@ -228,7 +362,10 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[]]></ST>
+        <ST><![CDATA[arrAddressWrite[1][2].1 := NOT arrAddressWrite[1][2].1;
+IF NOT bError THEN
+	estate := ASDAB3_RESET_DONE;
+END_IF]]></ST>
       </Implementation>
     </Method>
     <Method Name="MS_ResetDone" Id="{38ccce8c-e844-4455-8a5f-e24ff30b51db}" FolderPath="MS\">
@@ -237,7 +374,9 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[]]></ST>
+        <ST><![CDATA[IF NOT bReset THEN
+	eState := ASDAB3_IDLE;
+END_IF]]></ST>
       </Implementation>
     </Method>
     <Method Name="MS_Uninitalized" Id="{4fa74425-b155-4722-8999-3c8f5d75d7b4}" FolderPath="MS\">
@@ -276,7 +415,12 @@ arrAddressWrite[1][1] := 1;
 arrAddressWrite[1][2] := 0;
 arrAddressWrite[1][10] := E_ModbusFunction.WriteSingleRegister;
 
-iNumAddRegionWrite := 0;]]></ST>
+arrAddressWrite[2][0] := 16#30C;	//P3.006 Digital input (DI) control switch
+arrAddressWrite[2][1] := 1;
+arrAddressWrite[2][2] := 16#1FFF;	//never change this value
+arrAddressWrite[2][10] := E_ModbusFunction.WriteSingleRegister;
+
+iNumAddRegionWrite := 3;]]></ST>
       </Implementation>
     </Method>
     <Property Name="PositionCmd" Id="{9abeab55-b77c-49ff-ab6e-596ba093758f}" FolderPath="Status\">
@@ -315,6 +459,12 @@ END_VAR
 	ASDAB3_MOVE_ABSOLUTE_DONE :
 		MS_MoveAbsoluteDone();
 		
+	ASDAB3_HOME:
+		MS_Home();
+		
+	ASDAB3_HOME_DONE:
+		MS_HomeDone();
+	
 	ASDAB3_RESET :
 		MS_Reset();
 		
@@ -328,6 +478,11 @@ END_CASE]]></ST>
     </Method>
     <LineIds Name="FB_ASDAB3_RTU">
       <LineId Id="30" Count="0" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="101" Count="5" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="107" Count="0" />
       <LineId Id="9" Count="0" />
     </LineIds>
     <LineIds Name="FB_ASDAB3_RTU.Active.Get">
@@ -348,7 +503,9 @@ END_CASE]]></ST>
       <LineId Id="128" Count="2" />
       <LineId Id="139" Count="1" />
       <LineId Id="142" Count="3" />
+      <LineId Id="147" Count="0" />
       <LineId Id="125" Count="0" />
+      <LineId Id="146" Count="0" />
       <LineId Id="15" Count="0" />
       <LineId Id="78" Count="0" />
       <LineId Id="69" Count="0" />
@@ -357,51 +514,96 @@ END_CASE]]></ST>
     <LineIds Name="FB_ASDAB3_RTU.ErrorID.Get">
       <LineId Id="2" Count="0" />
     </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.Homed.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
     <LineIds Name="FB_ASDAB3_RTU.InPosition.Get">
+      <LineId Id="5" Count="3" />
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_ASDAB3_RTU.IsStop.Get">
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_ASDAB3_RTU.MR_Abort">
+      <LineId Id="8" Count="8" />
       <LineId Id="5" Count="0" />
+      <LineId Id="17" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.MR_Home">
+      <LineId Id="32" Count="0" />
+      <LineId Id="6" Count="0" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="8" Count="1" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="10" Count="1" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="7" Count="0" />
     </LineIds>
     <LineIds Name="FB_ASDAB3_RTU.MR_Init">
       <LineId Id="5" Count="11" />
       <LineId Id="4" Count="0" />
     </LineIds>
     <LineIds Name="FB_ASDAB3_RTU.MR_MoveAbsolute">
+      <LineId Id="13" Count="0" />
+      <LineId Id="35" Count="3" />
+      <LineId Id="16" Count="5" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="30" Count="4" />
       <LineId Id="8" Count="0" />
     </LineIds>
     <LineIds Name="FB_ASDAB3_RTU.MR_Reset">
+      <LineId Id="7" Count="6" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_ASDAB3_RTU.MS_Aborting">
+      <LineId Id="16" Count="1" />
+      <LineId Id="21" Count="3" />
       <LineId Id="11" Count="0" />
       <LineId Id="8" Count="0" />
       <LineId Id="7" Count="0" />
     </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.MS_Home">
+      <LineId Id="12" Count="0" />
+      <LineId Id="19" Count="2" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3_RTU.MS_HomeDone">
+      <LineId Id="2" Count="0" />
+      <LineId Id="6" Count="1" />
+    </LineIds>
     <LineIds Name="FB_ASDAB3_RTU.MS_Idle">
       <LineId Id="2" Count="0" />
+      <LineId Id="6" Count="1" />
     </LineIds>
     <LineIds Name="FB_ASDAB3_RTU.MS_Initializing">
       <LineId Id="39" Count="1" />
       <LineId Id="12" Count="1" />
     </LineIds>
     <LineIds Name="FB_ASDAB3_RTU.MS_MoveAbsolute">
+      <LineId Id="15" Count="0" />
       <LineId Id="2" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="7" Count="1" />
     </LineIds>
     <LineIds Name="FB_ASDAB3_RTU.MS_MoveAbsoluteDone">
       <LineId Id="7" Count="0" />
+      <LineId Id="11" Count="1" />
     </LineIds>
     <LineIds Name="FB_ASDAB3_RTU.MS_ReadyInitialized">
+      <LineId Id="16" Count="0" />
+      <LineId Id="11" Count="1" />
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_ASDAB3_RTU.MS_Reset">
       <LineId Id="2" Count="0" />
+      <LineId Id="6" Count="2" />
     </LineIds>
     <LineIds Name="FB_ASDAB3_RTU.MS_ResetDone">
       <LineId Id="2" Count="0" />
+      <LineId Id="6" Count="1" />
     </LineIds>
     <LineIds Name="FB_ASDAB3_RTU.MS_Uninitalized">
       <LineId Id="123" Count="0" />
@@ -418,6 +620,8 @@ END_CASE]]></ST>
       <LineId Id="131" Count="0" />
       <LineId Id="52" Count="2" />
       <LineId Id="130" Count="0" />
+      <LineId Id="139" Count="3" />
+      <LineId Id="138" Count="0" />
       <LineId Id="114" Count="0" />
       <LineId Id="2" Count="0" />
     </LineIds>
@@ -437,7 +641,13 @@ END_CASE]]></ST>
       <LineId Id="12" Count="0" />
       <LineId Id="24" Count="1" />
       <LineId Id="13" Count="0" />
-      <LineId Id="26" Count="1" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="40" Count="1" />
       <LineId Id="14" Count="0" />
       <LineId Id="28" Count="1" />
       <LineId Id="15" Count="0" />

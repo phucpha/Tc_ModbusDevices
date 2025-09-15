@@ -473,8 +473,8 @@ ELSIF eState = IPRO_RESET_DONE THEN
 END_IF*)]]></ST>
       </Implementation>
     </Method>
-    <Method Name="MR_Stop" Id="{59ba60d7-8ae5-4339-b230-b4cb6d4a4b1f}" FolderPath="Requests\">
-      <Declaration><![CDATA[METHOD MR_Stop : BOOL // carefully because it lead to IPRO_STATUS_FAULT // need to be init again]]></Declaration>
+    <Method Name="MR_Stop" Id="{4b80d5e7-5616-4415-8bd0-c2a744c8ce87}" FolderPath="Requests\">
+      <Declaration><![CDATA[METHOD MR_Stop : BOOL ]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF eState >= IPRO_IDLE AND eState <> IPRO_STOP_DONE THEN
 	bStop := TRUE;
@@ -1225,11 +1225,8 @@ END_VAR
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_IPRO_ModbusRTU.MR_Stop">
-      <LineId Id="2" Count="1" />
-      <LineId Id="5" Count="1" />
-      <LineId Id="12" Count="1" />
-      <LineId Id="7" Count="4" />
-      <LineId Id="4" Count="0" />
+      <LineId Id="3" Count="10" />
+      <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_IPRO_ModbusRTU.MS_Aborting">
       <LineId Id="6" Count="0" />
