@@ -5,7 +5,7 @@
 -------------------------read the document bellow---------------------------------------------------------------*)
 FUNCTION_BLOCK FB_IPRO_ModbusRTU EXTENDS FB_ModbusSlaveRtu IMPLEMENTS I_Ipro_MotorPower;
 VAR
-	eState : E_IPro_State;
+	eState : E_AxisState;
 // Write Modbus
 	bControlModeSwitchCommand	: BOOL;						(* write p4.15 *)
 	bFieldbusEnableServoCommand	:  BOOL;					(* write p4.11 0:Disable, 1:Anable *)
@@ -58,12 +58,12 @@ END_VAR
 *)
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[bActive := eState >= IPRO_READY_INITIALIZED;
+      <ST><![CDATA[bActive := eState >= AXIS_READY_INITIALIZED;
 StateMachine();
 bError := nFaultCode <> 0;
 SUPER^();
 CASE eState OF
-	IPRO_INITIALIZING..IPRO_RESET_DONE, IPRO_ABORTING:
+	AXIS_INITIALIZING..AXIS_RESET_DONE, AXIS_ABORTING:
 		tonConfirmReallyError(
 			IN := bError OR bModbusError,
 			PT := timeConfirmReallyError,
@@ -116,7 +116,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[IF eState = IPRO_UNINITIALIZED THEN
+          <ST><![CDATA[IF eState = AXIS_UNINITIALIZED THEN
 	THIS^.eControlMode := ControlMode;
 END_IF
 
@@ -254,7 +254,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[IsStop := eSystemStatus =  IPRO_STATUS_FAULT;]]></ST>
+          <ST><![CDATA[IsStop := eSystemStatus = IPRO_STATUS_FAULT;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -273,7 +273,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[IF eState = IPRO_UNINITIALIZED THEN
+          <ST><![CDATA[IF eState = AXIS_UNINITIALIZED THEN
 	lrMaxSpeed := MaxSpeed;
 END_IF
 
@@ -296,7 +296,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[IF eState = IPRO_UNINITIALIZED THEN
+          <ST><![CDATA[IF eState = AXIS_UNINITIALIZED THEN
 	lrMaxTorque := MaxTorque;
 END_IF
 
@@ -309,12 +309,12 @@ arrAddressWrite[10][2] :=  LREAL_TO_WORD(ABS(lrMaxTorque*10));]]></ST>
 
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IF eState >= IPRO_INITIALIZING THEN
+        <ST><![CDATA[IF eState >= AXIS_INITIALIZING THEN
 	bAbort := TRUE;
 	MR_Abort := FALSE;
 	bBusy := TRUE;
-	eState := IPRO_ABORTING;
-ELSIF eState = IPRO_UNINITIALIZED THEN
+	eState := AXIS_ABORTING;
+ELSIF eState = AXIS_UNINITIALIZED THEN
 	bAbort := FALSE;
 	MR_Abort := TRUE;
 	bBusy := False;
@@ -328,7 +328,7 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IF eState = IPRO_IDLE AND eCurrentMode = IPRO_CURRENT_MODE_POSITION 
+        <ST><![CDATA[IF eState = AXIS_IDLE AND eCurrentMode = IPRO_CURRENT_MODE_POSITION 
 AND NOT F_CheckInRange(lrHighLimit := lrHomePosition + 10,
 					lrLowLimit := lrHomePosition - 10,
 					lrValue := lrPositionFeedback)
@@ -337,16 +337,16 @@ THEN
 	bHomed := FALSE;
 	bBusy := TRUE;
 	MR_Home := FALSE;
- 	eState := IPRO_HOME;
+ 	eState := AXIS_HOME;
 	THIS^.lrHomePosition := lrHomePosition;
-ELSIF  eState = IPRO_IDLE AND eCurrentMode <> IPRO_CURRENT_MODE_POSITION THEN 
+ELSIF  eState = AXIS_IDLE AND eCurrentMode <> IPRO_CURRENT_MODE_POSITION THEN 
 	bHome := TRUE;
 	bHomed := FALSE;
 	bBusy := TRUE;
 	MR_Home := FALSE;
  	MS_SwitchMode(eModeChangeTo := IPRO_CURRENT_MODE_POSITION);
 
-ELSIF eState = IPRO_HOME_DONE THEN
+ELSIF eState = AXIS_HOME_DONE THEN
 	bHomed := TRUE;
 	bHome := FALSE;
 	bBusy := FALSE;
@@ -357,13 +357,13 @@ END_IF]]></ST>
     <Method Name="MR_Init" Id="{bdf0da52-3dbd-43dd-b4d0-dd24e17ac0ad}" FolderPath="Requests\">
       <Declaration><![CDATA[METHOD MR_Init : BOOL]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IF eState = IPRO_UNINITIALIZED THEN
+        <ST><![CDATA[IF eState = AXIS_UNINITIALIZED THEN
 	bInit := TRUE;
 	bInited := FALSE;
 	bBusy := TRUE;
 	MR_Init := FALSE;
-	eState := IPRO_INITIALIZING;
-ELSIF eState = IPRO_READY_INITIALIZED THEN
+	eState := AXIS_INITIALIZING;
+ELSIF eState = AXIS_READY_INITIALIZED THEN
 	bInited := True;
 	bInit := FALSE;
 	bBusy := FALSE;
@@ -379,7 +379,7 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IF eState = IPRO_IDLE 
+        <ST><![CDATA[IF eState = AXIS_IDLE 
 AND eCurrentMode = IPRO_CURRENT_MODE_POSITION 
 AND NOT F_CheckInRange( lrHighLimit := lrPositionFeedback + 10,
 						lrLowLimit := lrPositionFeedback - 10,
@@ -390,21 +390,21 @@ THEN
 	bBusy := TRUE;
 	bMoveAbsolute := TRUE;
 	bMoveAbsoluted := FALSE;
-	eState := IPRO_MOVE_ABSOLUTE;
-ELSIF eState = IPRO_IDLE  AND eCurrentMode <> IPRO_CURRENT_MODE_POSITION THEN
+	eState := AXIS_MOVE_ABSOLUTE;
+ELSIF eState = AXIS_IDLE  AND eCurrentMode <> IPRO_CURRENT_MODE_POSITION THEN
 	MR_MoveAbsolute := FALSE;
 	bBusy := TRUE;
 	bMoveAbsolute := TRUE;
 	bMoveAbsoluted := FALSE;
-	MS_SwitchMode( eModeChangeTo := IPRO_CURRENT_MODE_POSITION);// if switch mode ok => eCurrentMode = IPRO_CURRENT_MODE_POSITION 
+	MS_SwitchMode( eModeChangeTo := IPRO_CURRENT_MODE_POSITION);// if switch mode ok => eCurrentMode = AXIS_CURRENT_MODE_POSITION 
 
-ELSIF eState = IPRO_MOVE_ABSOLUTE_DONE THEN
+ELSIF eState = AXIS_MOVE_ABSOLUTE_DONE THEN
 	bBusy := FALSE;
 	bMoveAbsolute := FALSE;
 	MR_MoveAbsolute := TRUE;
 	bMoveAbsoluted := TRUE;
 	
-ELSIF  eState = IPRO_IDLE 
+ELSIF  eState = AXIS_IDLE 
 	AND eCurrentMode = IPRO_CURRENT_MODE_POSITION 
 	AND F_CheckInRange( lrHighLimit := lrPositionFeedback + 10,
 							lrLowLimit := lrPositionFeedback - 10,
@@ -424,8 +424,7 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
-IF eState = IPRO_IDLE
+        <ST><![CDATA[IF eState = AXIS_IDLE
 	AND eCurrentMode = IPRO_CURRENT_MODE_TORQUE 
 	AND NOT F_CheckInRange(
 				lrHighLimit := lrTorqueFeedback + 0.5,// 1%
@@ -436,10 +435,10 @@ THEN
 	bMoveTorqued	:= FALSE;
 	bBusy := TRUE;
 	MR_MoveTorque := FALSE;
-	eState := IPRO_MOVE_TORQUE;
+	eState := AXIS_MOVE_TORQUE;
 	lrTorqueCmd := lrTorque;
 	
-ELSIF eState = IPRO_IDLE
+ELSIF eState = AXIS_IDLE
 	AND eCurrentMode<>IPRO_CURRENT_MODE_TORQUE
 THEN
 	MR_MoveTorque := FALSE;
@@ -448,8 +447,8 @@ THEN
 	bMoveTorqued	:= FALSE;
 	MS_SwitchMode(eModeChangeTo := IPRO_CURRENT_MODE_TORQUE);// if switch mode ok => eCurrentMode = IPRO_CURRENT_MODE_POSITION 
 
-ELSIF eState = IPRO_IDLE 
-	OR eState = IPRO_MOVE_TORQUE_DONE 
+ELSIF eState = AXIS_IDLE 
+	OR eState = AXIS_MOVE_TORQUE_DONE 
 THEN
 	bBusy := FALSE;
 	bMoveTorque := FALSE;
@@ -476,13 +475,13 @@ END_IF*)]]></ST>
     <Method Name="MR_Stop" Id="{4b80d5e7-5616-4415-8bd0-c2a744c8ce87}" FolderPath="Requests\">
       <Declaration><![CDATA[METHOD MR_Stop : BOOL ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IF eState >= IPRO_IDLE AND eState <> IPRO_STOP_DONE THEN
+        <ST><![CDATA[IF eState >= AXIS_IDLE AND eState <> AXIS_STOP_DONE THEN
 	bStop := TRUE;
 	bStopped := FALSE;
 	MR_Stop := FALSE;
-	eState := IPRO_STOP;
+	eState := AXIS_STOP;
 	bBusy := TRUE;
-ELSIF eState = IPRO_STOP_DONE THEN
+ELSIF eState = AXIS_STOP_DONE THEN
 	bStop := FALSE;
 	bStopped := TRUE;
 	MR_Stop := TRUE;
@@ -503,7 +502,7 @@ lrTorqueCmd := 0;
 bEmergenCyStop := false;
 arrAddressWrite[1][2] :=  BOOL_TO_WORD(bFieldbusEnableServoCommand);
 IF THIS^.eSystemStatus <> IPRO_STATUS_RUN THEN
-	eState := IPRO_UNINITIALIZED;
+	eState := AXIS_UNINITIALIZED;
 END_IF
 
 ]]></ST>
@@ -523,7 +522,7 @@ IF F_CheckInRange(lrHighLimit := lrHomePosition + 10,
 					lrLowLimit := lrHomePosition - 10,
 					lrValue := lrPositionFeedback)
 THEN
-	eState := IPRO_HOME_DONE;
+	eState := AXIS_HOME_DONE;
 END_IF
 				]]></ST>
       </Implementation>
@@ -535,7 +534,7 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF NOT bHome THEN
-	eState := IPRO_IDLE;
+	eState := AXIS_IDLE;
 END_IF]]></ST>
       </Implementation>
     </Method>
@@ -561,7 +560,7 @@ IF THIS^.eSystemStatus = IPRO_STATUS_READY THEN // Ignor the faultcode AND nFaul
 END_IF
  
 IF eSystemStatus = IPRO_STATUS_RUN THEN
-	eState := IPRO_READY_INITIALIZED;
+	eState := AXIS_READY_INITIALIZED;
 END_IF]]></ST>
       </Implementation>
     </Method>
@@ -579,7 +578,7 @@ IF F_CheckInRange(lrHighLimit := lrPositionCmd + 10,
 					lrLowLimit := lrPositionCmd - 10,
 					lrValue := lrPositionFeedback)
 THEN
-	eState := IPRO_MOVE_ABSOLUTE_DONE;
+	eState := AXIS_MOVE_ABSOLUTE_DONE;
 END_IF]]></ST>
       </Implementation>
     </Method>
@@ -590,7 +589,7 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF NOT bMoveAbsolute THEN
-	eState := IPRO_IDLE;
+	eState := AXIS_IDLE;
 END_IF]]></ST>
       </Implementation>
     </Method>
@@ -609,7 +608,7 @@ IF F_CheckInRange( lrHighLimit := lrTorqueFeedback + 0.5,// 1%
 THEN
 	eState := IPRO_MOVE_TORQUE_DONE;
 END_IF*)
-eState := IPRO_MOVE_TORQUE_DONE;]]></ST>
+eState := AXIS_MOVE_TORQUE_DONE;]]></ST>
       </Implementation>
     </Method>
     <Method Name="MS_MoveTorqueDone" Id="{8f9b48d7-1fdb-40bd-8df1-6de155336372}" FolderPath="StateMachine\">
@@ -620,7 +619,7 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF NOT bMoveTorque THEN
-	eState := IPRO_IDLE;
+	eState := AXIS_IDLE;
 END_IF]]></ST>
       </Implementation>
     </Method>
@@ -631,7 +630,7 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF NOT bInit THEN
-	eState := IPRO_IDLE;
+	eState := AXIS_IDLE;
 END_IF]]></ST>
       </Implementation>
     </Method>
@@ -662,7 +661,7 @@ END_VAR
         <ST><![CDATA[bEmergenCyStop := TRUE;
 arrAddressWrite[11][2] := BOOL_TO_WORD(THIS^.bEmergenCyStop);
 IF eSystemStatus = IPRO_STATUS_FAULT THEN
-	eState := IPRO_STOP_DONE;
+	eState := AXIS_STOP_DONE;
 END_IF]]></ST>
       </Implementation>
     </Method>
@@ -673,7 +672,7 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF NOT bStop THEN
-	eState := IPRO_UNINITIALIZED;
+	eState := AXIS_UNINITIALIZED;
 END_IF]]></ST>
       </Implementation>
     </Method>
@@ -836,7 +835,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[IF eState = IPRO_UNINITIALIZED THEN
+          <ST><![CDATA[IF eState = AXIS_UNINITIALIZED THEN
 	lrNagativePositionSoftwareLimit := NagativePositionLimit;
 END_IF
 
@@ -881,7 +880,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[IF eState = IPRO_UNINITIALIZED THEN
+          <ST><![CDATA[IF eState = AXIS_UNINITIALIZED THEN
 	lrPositivePositionSoftwareLimit := PositionPositiveLimit;
 END_IF
 
@@ -934,7 +933,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="State" Id="{ca3be74d-8a42-48c3-bc02-f193a7afc1dd}" FolderPath="Status\">
-      <Declaration><![CDATA[PROPERTY State : E_IPro_State]]></Declaration>
+      <Declaration><![CDATA[PROPERTY State : E_AxisState]]></Declaration>
       <Get Name="Get" Id="{34666fd9-328f-4f91-a8b2-ddcc78b6d879}">
         <Declaration><![CDATA[VAR
 END_VAR
@@ -954,49 +953,49 @@ VAR
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[CASE eState OF
-	IPRO_UNINITIALIZED:
+	AXIS_UNINITIALIZED:
 		MS_Uninitalized();
 		
-	IPRO_INITIALIZING:
+	AXIS_INITIALIZING:
 		MS_Initializing();
 		
-	IPRO_READY_INITIALIZED:
+	AXIS_READY_INITIALIZED:
 		MS_ReadyInitialized();
 		
-	IPRO_IDLE:
+	AXIS_IDLE:
 		MS_Idle();
 		
-	IPRO_HOME:
+	AXIS_HOME:
 		MS_Home();
 		
-	IPRO_HOME_DONE:
+	AXIS_HOME_DONE:
 		MS_HomeDone();
 		
-	IPRO_MOVE_ABSOLUTE:
+	AXIS_MOVE_ABSOLUTE:
 		MS_MoveAbsolute();
 	
-	IPRO_MOVE_ABSOLUTE_DONE:
+	AXIS_MOVE_ABSOLUTE_DONE:
 		MS_MoveAbsoluteDone();
 		
-	IPRO_MOVE_TORQUE:
+	AXIS_MOVE_TORQUE:
 		MS_MoveTorque();
 		
-	IPRO_MOVE_TORQUE_DONE: 
+	AXIS_MOVE_TORQUE_DONE: 
 		MS_MoveTorqueDone();
 	
-	IPRO_STOP:
+	AXIS_STOP:
 		MS_Stop();
 	
-	IPRO_STOP_DONE:
+	AXIS_STOP_DONE:
 		MS_StopDone();
 		
-	IPRO_RESET:
+	AXIS_RESET:
 		MS_Reset();
 	
-	IPRO_RESET_DONE:
+	AXIS_RESET_DONE:
 		MS_ResetDone();
 		
-	IPRO_ABORTING:
+	AXIS_ABORTING:
 		MS_Aborting();
 	
 
@@ -1191,7 +1190,6 @@ END_VAR
       <LineId Id="8" Count="0" />
     </LineIds>
     <LineIds Name="FB_IPRO_ModbusRTU.MR_MoveTorque">
-      <LineId Id="39" Count="0" />
       <LineId Id="5" Count="0" />
       <LineId Id="19" Count="0" />
       <LineId Id="11" Count="0" />

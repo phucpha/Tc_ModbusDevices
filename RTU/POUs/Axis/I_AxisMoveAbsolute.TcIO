@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_AxisMoveAbsolute" Id="{577851f7-436a-474f-9683-bed722c561b9}">
+    <Declaration><![CDATA[INTERFACE I_AxisMoveAbsolute
+]]></Declaration>
+    <Property Name="ActualPosition" Id="{cf88f8da-ee83-45f7-8024-6775855e24e1}">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY ActualPosition : REFERENCE TO LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{00301ed6-4b5c-446f-96e5-94752993dfcf}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="InPosition" Id="{76d96262-ce60-47f5-b46a-3c38f0edb9b4}">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY InPosition : REFERENCE TO BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{b146c69e-160d-4ae3-9693-96d2a8d80228}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Method Name="MR_MoveAbsolute" Id="{4df310fb-3248-4435-be2a-9088ef3119d1}">
+      <Declaration><![CDATA[METHOD MR_MoveAbsolute : BOOL
+VAR_INPUT
+	lrAbsolutePosition : LREAL;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Property Name="SetpointPosition" Id="{2ef6fa9d-dc72-43d7-b689-e50b62128a9a}">
+      <Declaration><![CDATA[PROPERTY SetpointPosition : LREAL]]></Declaration>
+      <Get Name="Get" Id="{97ed0241-19a1-40eb-b056-34bf4c75e425}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+  </Itf>
+</TcPlcObject>

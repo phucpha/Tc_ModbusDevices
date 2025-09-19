@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_VisuCtrlAxisJogMode" Id="{012b1c03-949b-4c1c-a901-35f98721a27d}">
+    <Declaration><![CDATA[{attribute 'strict'}
+TYPE E_VisuCtrlAxisJogMode :
+(
+	VISU_AXIS_JOG_MODE_STANDARD_SLOW	:= 0,	(*  *)
+	VISU_AXIS_JOG_MODE_STANDARD_FAST	:= 1,	(*  *)
+	VISU_AXIS_JOG_MODE_CONTINOUS		:= 2,	(*  *)
+	VISU_AXIS_JOG_MODE_INCHING			:= 3,	(*  *)
+	VISU_AXIS_JOG_MODE_INCHING_MODULO	:= 4
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

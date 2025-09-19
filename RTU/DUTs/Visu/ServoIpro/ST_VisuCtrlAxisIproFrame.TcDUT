@@ -32,7 +32,7 @@ STRUCT
 	lrSpeedFeedback					: LREAL;
 	eStatus							: E_IProStatus;
 	sStatus							: STRING;
-	eState							: E_IPro_State;
+	eState							: E_AxisState;
 	sState							: STRING;
 	lrTorqueFeedback				: LREAL;
 		

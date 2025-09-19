@@ -53,7 +53,7 @@
 		</DataType>
 	</DataTypes>
 	<Project GUID="{801BB319-3AC8-4DD7-9EAF-1CE6A49D935D}" Name="RTU" PrjFilePath="..\..\RTU\RTU.plcproj" TmcFilePath="..\..\RTU\RTU.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e" SymbolicMapping="true">
-		<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="RTU\RTU.tmc" TmcHash="{C3FFD2C0-98F9-8BA6-C8AC-4E5BC95596D3}">
+		<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="RTU\RTU.tmc" TmcHash="{C566310F-EB61-4191-F2C7-1A8C6E574930}">
 			<Name>RTU Instance</Name>
 			<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
 			<Vars VarGrpType="1">

@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_AxisHomeEx" Id="{36f91dc1-cc6a-43cb-b62b-a9366334cc72}">
+    <Declaration><![CDATA[INTERFACE I_AxisHomeEx
+]]></Declaration>
+    <Property Name="IsHomed" Id="{cd6e636c-0b23-4169-b21d-66c5d8311aab}">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY IsHomed : REFERENCE TO BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{7c48fb28-56a5-4bf7-9722-3a0cf49fff84}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Method Name="MR_HomeEx" Id="{c1582d1b-b567-46a8-b647-ff97c27951ed}">
+      <Declaration><![CDATA[(* Homing not require set the home position
+-The position might be set by the Axis itself by its function home 
+ *)
+METHOD MR_HomeEx : BOOL]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

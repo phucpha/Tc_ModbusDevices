@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_AxisMoveTorque" Id="{3691df00-0dcc-4bbc-a13a-0dbac61947b1}">
+    <Declaration><![CDATA[INTERFACE I_AxisMoveTorque
+]]></Declaration>
+    <Property Name="ActualTorque" Id="{0dd56013-289f-4138-86b2-381ba183c320}">
+      <Declaration><![CDATA[PROPERTY ActualTorque : Reference to Lreal]]></Declaration>
+      <Get Name="Get" Id="{cba70520-2182-43e3-9b90-e88fa2624a50}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="InTorque" Id="{1bd97923-da92-430b-abe8-623f980edf61}">
+      <Declaration><![CDATA[PROPERTY InTorque : REFERENCE TO BOOL]]></Declaration>
+      <Get Name="Get" Id="{36b02d38-1c35-4966-be13-6fb34a13e079}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Method Name="MR_MoveTorque" Id="{a54269f9-89f8-4412-a639-38a67ff358b9}">
+      <Declaration><![CDATA[METHOD MR_MoveTorque : BOOL // control mode must have torque Mode edit :Torque can be change every time if needed;
+VAR_INPUT
+	lrTorque	: LREAL;// must smaller than max torque
+END_VAR
+]]></Declaration>
+    </Method>
+    <Property Name="SetpointTorque" Id="{b65ad24b-128f-43e1-a743-a7ce790b9555}">
+      <Declaration><![CDATA[PROPERTY SetpointTorque : Lreal]]></Declaration>
+      <Get Name="Get" Id="{7e266ba6-6f80-45ec-bc45-9abd32cda3c5}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+  </Itf>
+</TcPlcObject>

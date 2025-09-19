@@ -4,11 +4,13 @@
     <Declaration><![CDATA[PROGRAM POU
 VAR
 	fbMasterRTU : FB_ModbusMaster_PcCOM;
-	IPRO : FB_IPRO_ModbusRTU;
-	asda : FB_ASDAB3_RTU;
+	Ipro	: FB_IPRO_ModbusRTU;
+	asda : FB_ASDAB3;//FB_ASDAB3_RTU;
+	stAsda : ST_VisuCtrlAxisFrame;
+	eVisuCtrl : E_VisuCtrlSingleAxisState;
 	nState : UINT := 10;
-	eAsdaManual : E_VisuCtrlSingleAxisIproState;
-	stAsda : ST_VisuCtrlAxisIproFrame;
+	nStateAuto : UINT := 0;
+	eAsdaManual : E_VisuCtrlSingleAxisState;
 	bFirstCycle : BOOL := TRUE;
 	fPosition : LREAL;
 END_VAR
@@ -17,7 +19,7 @@ END_VAR
       <ST><![CDATA[// first cycle
 IF bFirstCycle THEN
 	bFirstCycle := FALSE;
-	fbMasterRTU.ScanTime := 2000;
+	fbMasterRTU.ScanTime := 1000;
 	fbMasterRTU.Timeout := 300;
 	fbMasterRTU.RegisterSlave(asda);
 	asda.FirstCycle(
@@ -79,25 +81,37 @@ CASE nState OF
 				END_IF
 				
 			VISU_CTRL_AXIS_HOME				:
-				asda.MR_Home(0);
-				IF asda.Homed AND NOT asda.Busy THEN
+				asda.MR_HomeEx();
+				IF asda.IsHomed AND NOT asda.Busy THEN
 					eAsdaManual := VISU_CTRL_AXIS_WAIT_FOR_CMD;
 				END_IF
 				
-			VISU_CTRL_AXIS_STOP				:
 			VISU_CTRL_AXIS_MOVE_ABSOLUTE	:
 				asda.MR_MoveAbsolute(fPosition);
 				IF asda.InPosition AND NOT asda.Busy THEN
 					eAsdaManual := VISU_CTRL_AXIS_WAIT_FOR_CMD;
 				END_IF
 				
-			VISU_CTRL_AXIS_MOVE_TORQUE		:
 			VISU_CTRL_AXIS_ABORT			:
 				asda.MR_Abort();
 				IF NOT asda.Active AND NOT asda.Busy THEN
 					eAsdaManual := VISU_CTRL_AXIS_WAIT_FOR_CMD;					
 				END_IF
 		END_CASE
+	30: // Auto
+		CASE nStateAuto OF
+			0: // move position1
+				asda.MR_MoveAbsolute(5000);
+				IF asda.InPosition AND NOT asda.Busy THEN
+					nStateAuto := 10;
+				END_IF
+			10: //MOVE Position 2
+			   	asda.MR_MoveAbsolute(20000);
+				IF asda.InPosition AND NOT asda.Busy THEN
+					nStateAuto := 0;
+				END_IF
+		END_CASE
+		
 END_CASE
 asda();
 fbMasterRTU();]]></ST>
@@ -145,14 +159,21 @@ fbMasterRTU();]]></ST>
       <LineId Id="75" Count="0" />
       <LineId Id="110" Count="3" />
       <LineId Id="153" Count="0" />
-      <LineId Id="76" Count="1" />
+      <LineId Id="77" Count="0" />
       <LineId Id="139" Count="0" />
       <LineId Id="141" Count="2" />
-      <LineId Id="154" Count="0" />
-      <LineId Id="78" Count="0" />
+      <LineId Id="170" Count="0" />
       <LineId Id="70" Count="0" />
       <LineId Id="149" Count="3" />
       <LineId Id="71" Count="0" />
+      <LineId Id="184" Count="0" />
+      <LineId Id="187" Count="1" />
+      <LineId Id="191" Count="3" />
+      <LineId Id="190" Count="0" />
+      <LineId Id="197" Count="2" />
+      <LineId Id="196" Count="0" />
+      <LineId Id="189" Count="0" />
+      <LineId Id="185" Count="0" />
       <LineId Id="42" Count="0" />
       <LineId Id="33" Count="0" />
       <LineId Id="48" Count="0" />

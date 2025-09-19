@@ -181,7 +181,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="State" Id="{f7ee26ed-5e4d-4e8f-bf4c-d3955bafcb44}" FolderPath="Status\">
-      <Declaration><![CDATA[PROPERTY State : E_IPro_State]]></Declaration>
+      <Declaration><![CDATA[PROPERTY State : E_AxisState]]></Declaration>
       <Get Name="Get" Id="{d84e70ef-3968-4a2d-aaa6-eb84051d49f4}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>

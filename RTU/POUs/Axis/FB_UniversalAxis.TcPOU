@@ -1,0 +1,2109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_UniversalAxis" Id="{6375ad6b-56e4-4251-ad03-395e1e58be27}" SpecialFunc="None">
+    <Declaration><![CDATA[(* 
+:Description: This function block is base for all other axis devices. It's abstract so it can't be used to create instances.
+the internal variable might not refect actual value, you should only access by property and method assigned in I_UniversalAxis, and Interfaces that Derived FB implements.  .
+*)
+FUNCTION_BLOCK ABSTRACT FB_UniversalAxis EXTENDS FB_ModbusSlaveRtu IMPLEMENTS I_UniversalAxis
+VAR
+	(* Generic *)
+	sUnit 					: STRING;						(* Measurement units *)
+	bModulo					: BOOL;							(* Axis is periodic *)
+	
+	(* Internal commands *)
+	bInit					: BOOL;							(* Power on axis and prepare to work *)
+	bAbort					: BOOL;							(* Power off axis and reset status flags *)
+	bHome					: BOOL;							(* Home to reference point *)
+	bMoveVelocity			: BOOL;							(* Start motion with constant velocity *)
+	bMoveAbsolute			: BOOL;							(* Move to absolute position *)
+	bMoveAdditive			: BOOL;							(* Move by distance *)
+	bMoveRelative			: BOOL;							(* Move by distance *)
+	bMoveTorque				: BOOL;							(* Move Torque *)
+	bJog					: BOOL;							(* Start manual jog movement *)
+	bStop					: BOOL;							(* High priority stop command *)
+	bHalt					: BOOL;							(* Halt current motion, next motion command will abort this command *)
+	bReset					: BOOL;							(* Reset axis and return to READY state *)
+	bUnlock					: BOOL;							(* Unlock axis after stop command *)
+	//bCouple				: BOOL;							(* Couple appended slave axis *)
+	//bDecouple				: BOOL;							(* Decouple appended slave axis *)
+	
+	(* Internal status - flags *)
+	bActive					: BOOL;
+	bBusy					: BOOL;							(* Function block currently executes one of the requests *)
+	iErrorID				: UDINT;						(* Error ID *)
+	iAxisErrorID			: UDINT;						(* Axis error ID *)
+	lrActualPosition		: LREAL;						(* Actual axis position in selected units *)
+	lrActualVelocity		: LREAL;						(* Actual axis velocity in selected units *)
+	lrActualTorque			: LREAL;						(* Actual axis torque *)
+	bPowerOn 				: BOOL;							(* Power On status bit *)
+	bIsHomed				: BOOL;							(* Axis has been homed even once *)
+	bInVelocity				: BOOL;							(* Axis is moving in target velocity *)
+	bInPostion				: BOOL;							(* Axis reached target position *)
+	bInTorque				: BOOL;							(* Axis reached target torque *)
+	bMoveActive				: BOOL;							(* Axis is moving to target position *)
+	bJogDone				: BOOL;							(* Axis manual movement by jog done *)
+	bStopped				: BOOL;							(* Axis movement has been stopped *)
+	bHalted					: BOOL;							(* Axis movement has been halted *)
+	bLocked					: BOOL;							(* Axis locked after stop commad *)
+	bHaltLog 				: BOOL;							(* Halt request flag for machine logger *)
+	bStopLog 				: BOOL;							(* Stop request flag for machine logger *)
+	
+	(* Internal status - state machines *)
+	eAxisState 				: E_AxisState;					(* Main axis state machine *)
+	eAxisStateBeforeReset 	: E_AxisState;					(* State before reset command *)
+	
+	(* General parameters *)
+	lrOverride				: LREAL;						(* Axis velocity override in percents [%] *)
+	lrVelocity 				: LREAL;						(* Axis velocity in measurement units per second *)
+	
+	lrAcceleration			: LREAL;						(* Axis acceleration in measurement units per sercond^2 *)
+	lrDeceleration 			: LREAL;						(* Axis deceleration in measurement units per sercond^2 *)
+	lrJerk					: LREAL;						(* Axis jerk in measurement unit per sercond^3 *)
+	lrAbsolutePosition		: LREAL;						(* Target position for MC_MoveAbsolute function *)
+	lrRelativeDistance		: LREAL;						(* Relative distance to move for MC_MoveRelative/Additive fuctions *)
+	lrHomePosition			: LREAL;						(* This parameters is used to set axis position while performing homing procedure *)
+	
+	(* Jog function parameters *)	
+	bJogActive				: BOOL;
+	lrJogPosition			: LREAL;						(* Relative position to move for jog feature *)
+	lrJogVelocity			: LREAL;						(* Jog movement velocity *)
+	lrJogAcceleration		: LREAL;						(* Jog movement acceleration *)
+	lrJogDeceleration		: LREAL;						(* Jog movement deceleration *)
+	lrJogJerk				: LREAL;						(* Jog movement jerk *)
+	
+	(* Stop function parameters *)
+	lrStopDeceleration		: LREAL;						(* Stop deceleration *)
+	lrStopJerk 				: LREAL;						(* Stop jerk *)
+
+	bResetConfirmation 		: BOOL;						(*  *)	
+	
+	rtError					: R_TRIG; 					(* Rising edge trigger for function block error *)
+
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[SUPER^();
+(* Update status flags *)
+bActive := (eAxisState >= AXIS_READY_INITIALIZED);
+bBusy := eAxisState <> AXIS_UNINITIALIZED AND eAxisState <> AXIS_IDLE;
+
+IF rtError.Q THEN 
+	fbMachineLogger.MR_AddLogs(FUN_MergeStrings5(sName, ' : Error occured (error ID: ', UDINT_TO_STRING(iErrorID), ')', ''));
+END_IF
+						
+(* Execute main state machine *)
+StateMachine();]]></ST>
+    </Implementation>
+    <Folder Name="FirstCycle" Id="{3ce4bbc9-8a02-4613-aea1-f71569e4b386}" />
+    <Folder Name="Properties" Id="{98c8a09e-8c92-45dd-9981-c4781c9e9871}">
+      <Folder Name="Parameters" Id="{9c5e5480-e229-4c6e-a050-95f12fee12c3}" />
+      <Folder Name="Status" Id="{944dc201-f38c-4c66-bd3f-9500feb9c52c}" />
+    </Folder>
+    <Folder Name="Requests" Id="{1a2206ce-3eb9-42a3-89f4-68338cfab477}" />
+    <Folder Name="StateMachine" Id="{e2493819-0136-4cb6-97a7-1b260f69366f}" />
+    <Property Name="Acceleration" Id="{b04a6aa2-fe92-4c92-8beb-df0ce069425f}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY Acceleration : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{87bc69d5-07de-4859-8627-492834415078}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Acceleration := lrAcceleration;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{76d63199-8ead-4d40-b004-189bb72cfebd}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[lrAcceleration := Acceleration;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Active" Id="{8c07bbc2-1761-4d8f-86cb-a9cc09884ec5}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[PROPERTY Active : REFERENCE TO BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{11e435ad-ac07-43e9-90a8-bf9033e32c44}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Active REF= bActive;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ActualPosition" Id="{a6311ccb-f095-43df-8b2d-cd9f8ff0b277}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY ActualPosition : REFERENCE TO LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{321d8054-8645-4d6b-ad74-c566762a934b}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ActualPosition REF= lrActualPosition;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ActualTorque" Id="{07fcc2e2-142d-4ffe-bee1-bf9e21486c6f}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[PROPERTY ActualTorque : Reference to Lreal]]></Declaration>
+      <Get Name="Get" Id="{b84c90ab-eade-4585-99e5-14ac776f3d56}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ActualTorque ref= lrActualTorque;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ActualVelocity" Id="{f4c60875-48e0-45cf-9e15-8992f12ba2e9}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY ActualVelocity : REFERENCE TO LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{84ad8fa4-5fe2-4e0b-b2cf-e300b3d18e5a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ActualVelocity REF= lrActualVelocity;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="AxisErrorID" Id="{60ad9418-52c1-4a8e-965f-5e4b252cecaa}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY AxisErrorID : REFERENCE TO UDINT]]></Declaration>
+      <Get Name="Get" Id="{59ec82ba-e884-48cd-8536-5434807da57c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[AxisErrorID REF= iAxisErrorID;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="AxisRef" Id="{49413229-300b-47e0-8a86-2cb12f9ff1f0}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[PROPERTY AxisRef : AXIS_REF
+]]></Declaration>
+      <Get Name="Get" Id="{024616e4-e06a-46f5-a495-ca044e808a48}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[AxisRef := stAxisRef;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{adcc9537-c16e-4c02-ac2c-145e110db6d6}">
+        <Declaration><![CDATA[
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[stAxisRef := AxisRef;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="BufferMode" Id="{45aded39-b546-46ac-8846-c3ee2e7ab555}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY BufferMode : MC_BufferMode
+]]></Declaration>
+      <Get Name="Get" Id="{47086506-1f24-416d-964a-669febf29624}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[BufferMode := eBufferMode;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{dd942a17-d28b-4deb-8f37-e525a04d5e1f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[eBufferMode := BufferMode;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Busy" Id="{050863e6-3e87-40cc-a188-0b181748b89c}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[PROPERTY Busy : REFERENCE TO BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{b9ea57aa-43c1-4a2e-b2fd-3954e55e59d5}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Busy REF= bBusy;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Coupled" Id="{d39028e7-84c9-4e06-a9e2-8d6053c59a75}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY Coupled : REFERENCE TO BOOL]]></Declaration>
+      <Get Name="Get" Id="{fb1072d7-7805-4819-8330-bb6f52e3001b}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Deceleration" Id="{cee7be26-0b3c-4738-9a2a-944d97b5b69e}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[(* Might not work if base class not implement it *)
+PROPERTY Deceleration : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{9692a177-4e6c-40f8-a806-73ad3c63f7dc}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Deceleration := lrDeceleration;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{631b6ed3-bdb9-485b-92aa-582aa92ea52d}">
+        <Declaration><![CDATA[
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[lrDeceleration := Deceleration;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Direction" Id="{e2c2df7a-8ad8-4995-8dc5-3c48a00d473d}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[(* Might not work if base class not implement it *)
+PROPERTY Direction : MC_Direction
+]]></Declaration>
+      <Get Name="Get" Id="{0c6fd06e-c445-4119-a9ff-c58fe3c4fe02}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Direction := eDirection;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{a1aa89e6-f115-4f0a-b888-d8a1b410c84d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[eDirection := Direction;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="ErrorID" Id="{d03d79b3-e255-4016-8fcf-d6f4f74d7478}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY ErrorID : REFERENCE TO UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{68fb93ba-c1e9-4be0-a88b-f58e0c3bf35e}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ErrorID REF= iErrorID;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Halted" Id="{62026a68-6c62-4882-b2ee-a646e8f26ffc}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY Halted : REFERENCE TO BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{1ae94699-cf32-48b1-aba7-f0ee338843e1}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Halted REF= bHalted;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="InPosition" Id="{316eb8e6-1d22-439a-8e8f-ad143eca9da2}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY InPosition : REFERENCE TO BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{79f1f96e-f510-464e-b23b-7d1477e2bc44}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[InPosition REF= bInPostion;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="InTorque" Id="{07efb534-e756-4f73-afa4-5ef0912b652a}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[PROPERTY InTorque : REFERENCE TO BOOL]]></Declaration>
+      <Get Name="Get" Id="{ab5afd5f-6958-4f0d-bb5f-a6d68524af14}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[InTorque REF= bInTorque;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="InVelocity" Id="{643cc2b6-c05f-4e90-9b5d-6742f186b8f1}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[PROPERTY InVelocity : REFERENCE TO BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{36e88a05-0de4-4442-8a46-fd746d2aaf23}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[InVelocity REF= bInVelocity;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="IsHomed" Id="{a7d067d3-35fa-4f9e-a3b8-16fb1f380fc0}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY IsHomed : REFERENCE TO BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{4180653e-80e1-4a79-b0f3-1fe52f5aaa53}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[IsHomed REF= bIsHomed;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Jerk" Id="{e40d3d4e-cc6e-429e-b12b-f845e21cdfe3}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY Jerk : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{26333241-c649-4151-9c5b-05ed8cb70c5c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Jerk := lrJerk;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{492785d2-498e-4f3e-aebf-26c2f5fdb070}">
+        <Declaration><![CDATA[
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[lrJerk := Jerk;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="JogAcceleration" Id="{5f350105-d309-4449-801e-aacdc3fd8f47}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY JogAcceleration : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{188501d5-8694-41c9-abcb-6c6fbe9995a5}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[JogAcceleration := lrJogAcceleration;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{1df72f08-8ac8-424c-a0d8-bf61fd65660f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[lrJogAcceleration := JogAcceleration;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="JogDeceleration" Id="{fcf6a2ea-e3d1-4078-a7e2-b95e47ac87ad}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY JogDeceleration : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{b903e233-7eab-47d4-b773-b017bbf0694a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[JogDeceleration := lrJogDeceleration;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{f2d0ef8d-5ba6-49a4-91ad-39dcc816a212}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[lrJogDeceleration := JogDeceleration;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="JogDirection" Id="{b98498c5-8cac-4c00-8f88-fe7223f09368}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY JogDirection : E_AxisJogDirection
+]]></Declaration>
+      <Get Name="Get" Id="{4c4d12a1-63de-4503-abd5-1df3ad402190}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[JogDirection := eJogDirection;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{371c6f14-aef9-4291-b80a-59b5f203f044}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[eJogDirection := JogDirection;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="JogDone" Id="{c6d8c0ef-fb8c-4bff-ae4c-9b535969ff35}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY JogDone : REFERENCE TO BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{d63e3706-1a0b-4a51-9f5e-871ac62dd4c0}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[JogDone REF= bJogDone;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="JogJerk" Id="{0f29c4fc-58fe-45cc-831d-8b2fbed34004}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY JogJerk : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{f59e2f3d-c96e-49e4-ad38-3f6f0e000b67}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[JogJerk := lrJogJerk;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{9045fe6b-538c-4bf9-abd6-b913cd9c4724}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[lrJogJerk := JogJerk;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="JogMode" Id="{fa93b319-bfe0-4380-b2a5-03277445ce2d}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY JogMode : Tc2_MC2.E_JogMode
+]]></Declaration>
+      <Get Name="Get" Id="{44ad7260-7cd5-4f08-9f00-fcd04ab21339}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[JogMode := eJogMode;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{df0cee31-676a-4229-9ec2-59b3616ed091}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[eJogMode := JogMode;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="JogPosition" Id="{fce2bc22-7c22-4185-84c9-0c6dda24f510}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY JogPosition : LREAL]]></Declaration>
+      <Get Name="Get" Id="{8ecb04ed-e48b-4e7b-849b-4cdb57f57bc2}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[JogPosition := lrJogPosition;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{b6c8f554-c120-4f4b-9340-9ba497ffb030}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[lrJogPosition := JogPosition;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="JogVelocity" Id="{1fbc354a-586a-42bf-a3b6-f996103de642}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY JogVelocity : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{17189908-ef6b-40b4-ba3c-0c76b5a7b819}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[JogVelocity := lrJogVelocity;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{66cbd7b5-f642-412f-8261-15ecfb3f1586}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[lrJogVelocity := JogVelocity;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="LagError" Id="{06e2b427-f0f3-4738-8964-f11257f76360}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY LagError : LREAL]]></Declaration>
+      <Get Name="Get" Id="{10b9d8b0-040f-40b1-bb69-7c6092f7bddb}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[LagError := stAxisRef.NcToPlc.PosDiff;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Locked" Id="{2abc166a-266b-4a98-a02f-b2809fdf68de}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY Locked : REFERENCE TO BOOL]]></Declaration>
+      <Get Name="Get" Id="{8d9d275c-b41a-4ef6-b21b-a488aaceb646}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Locked REF= bLocked;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="MoveActive" Id="{773522d5-5f27-434d-ab68-ca475b71a707}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY MoveActive : REFERENCE TO BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{fb3289fb-ec1c-4e17-88ec-76150b2ab9a4}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[MoveActive REF= bMoveActive;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="MR_Abort" Id="{20a34ecc-a3eb-4d11-b132-485645e3365e}" FolderPath="Requests\">
+      <Declaration><![CDATA[METHOD MR_Abort : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF eAxisState >= AXIS_INITIALIZING THEN
+	bAbort := TRUE;
+	eAxisState := AXIS_ABORTING;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : abort requested'));
+	
+ELSIF eAxisState = AXIS_UNINITIALIZED THEN
+	bAbort 		:= FALSE;
+	MR_Abort	:= TRUE;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : abort done'));
+	
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_Couple" Id="{772efcc3-b4a0-49a2-9050-d1647f0993f2}" FolderPath="Requests\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+METHOD MR_Couple : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_Decouple" Id="{4e038503-0fef-4548-bcf6-a895414b61af}" FolderPath="Requests\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+METHOD MR_Decouple : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_FirstCycle" Id="{8a2892d5-dcb0-4652-a2d5-d42d26614b5d}" FolderPath="FirstCycle\">
+      <Declaration><![CDATA[METHOD MR_FirstCycle
+VAR_INPUT
+	sName 				: STRING; 	(* Axis object name *)
+	sMeasurementUnits	: STRING;	(* Measurement units used by axis *)
+	bModulo				: BOOL;		(* Axis is periodic, if not use ignore it*)
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.sName := sName;
+THIS^.sUnit := sMeasurementUnits;
+THIS^.bModulo := bModulo;
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_Halt" Id="{37c044b0-bfcd-4bf8-8e6f-e3d132860bbd}" FolderPath="Requests\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+METHOD MR_Halt : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF eAxisState >= AXIS_IDLE AND eAxisState <> AXIS_HALT_DONE THEN
+	IF NOT bHaltLog THEN 
+		fbMachineLogger.MR_AddLogs(CONCAT(sName,' : halt requested'));
+		bHaltLog := TRUE;
+	END_IF
+	
+	bHalt := TRUE;
+	eAxisState := AXIS_HALT;
+	
+ELSIF eAxisState = AXIS_HALT_DONE THEN
+	bInPostion 	:= FALSE;
+	bInVelocity := FALSE;
+	bMoveActive := FALSE;
+	bStopped 	:= FALSE;
+	bHalted 	:= TRUE;
+	bJogDone 	:= FALSE;
+	
+	bHalt		:= FALSE;
+	MR_Halt 	:= TRUE;
+
+	bHaltLog 	:= FALSE;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : halt done'));
+	
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_Home" Id="{65cc1dbd-48db-4f66-9e3a-aa8e5132fe1b}" FolderPath="Requests\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)METHOD MR_Home : BOOL
+VAR_INPUT
+	lrHomePosition : LREAL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF eAxisState = AXIS_IDLE THEN
+	THIS^.lrHomePosition := lrHomePosition;
+	bIsHomed := FALSE;
+	
+	bHome := TRUE;
+	eAxisState := AXIS_HOME;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : home position requested'));
+	
+ELSIF eAxisState = AXIS_HOME_DONE THEN
+	bIsHomed := TRUE;
+	
+	bHome := FALSE;
+	MR_Home := TRUE;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : home position done'));	
+	
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_HomeEx" Id="{e5c3ec7b-b1c9-4d89-bf0c-af4072d8c9c3}" FolderPath="Requests\">
+      <Declaration><![CDATA[(* Homing not require set the home position
+-The position might be set by the Axis itself by its function home 
+ *)
+METHOD MR_HomeEx : BOOL]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF eAxisState = AXIS_IDLE THEN
+	bIsHomed := FALSE;
+	bHome := TRUE;
+	eAxisState := AXIS_HOME;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : home position requested'));
+	
+ELSIF eAxisState = AXIS_HOME_DONE THEN
+	bIsHomed := TRUE;
+	bHome := FALSE;
+	MR_HomeEx := TRUE;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : home position done'));		
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_Init" Id="{d05e886a-cf22-4bd1-968b-35bb043ecb7c}" FolderPath="Requests\">
+      <Declaration><![CDATA[METHOD MR_Init : BOOL]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF eAxisState = AXIS_UNINITIALIZED THEN
+	bInit := TRUE;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : initialization requested'));
+	eAxisState := AXIS_INITIALIZING;
+	
+ELSIF eAxisState = AXIS_READY_INITIALIZED THEN
+	bInPostion 	:= FALSE;
+	bInVelocity := FALSE;
+	bMoveActive := FALSE;
+	bStopped 	:= FALSE;
+	bHalted 	:= FALSE;
+	bJogDone 	:= FALSE;
+	bInit 		:= FALSE;
+	MR_Init 	:= TRUE;
+
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : initialization done'));
+
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_Jog" Id="{b4713e19-ff62-4e99-961d-1ef3ae5cb282}" FolderPath="Requests\">
+      <Declaration><![CDATA[METHOD MR_Jog : BOOL
+VAR_INPUT
+	bJogActive	  : BOOL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.bJogActive := bJogActive;
+
+IF eAxisState = AXIS_IDLE THEN
+	bJog := TRUE;
+	bInPostion 	:= FALSE;
+	bInVelocity	:= FALSE;
+	bMoveActive	:= TRUE;
+	bStopped	:= FALSE;
+	bHalted 	:= FALSE;
+	bJogDone 	:= FALSE;
+	
+	eAxisState := AXIS_MOVE_JOG;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : move jog requested'));	
+	
+ELSIF eAxisState = AXIS_MOVE_JOG_DONE THEN
+	IF eJogMode = E_JogMode.MC_JOGMODE_INCHING OR eJogMode = E_JogMode.MC_JOGMODE_INCHING_MODULO THEN
+		bInPostion 	:= TRUE;
+	END_IF
+	
+	bInVelocity := FALSE;
+	bMoveActive := FALSE;
+	bStopped 	:= FALSE;
+	bHalted 	:= FALSE;
+	bJogDone 	:= TRUE;	
+
+	bJog 		:= FALSE;
+	MR_Jog 		:= TRUE;
+	
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : move jog done'));		
+	
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_MoveAbsolute" Id="{66b46e7f-5a09-40c3-96e3-7da62c18a5b0}" FolderPath="Requests\">
+      <Declaration><![CDATA[METHOD MR_MoveAbsolute : BOOL
+VAR_INPUT
+	lrAbsolutePosition : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF eAxisState = AXIS_IDLE AND THIS^.lrActualPosition <> lrAbsolutePosition THEN
+	THIS^.lrAbsolutePosition := lrAbsolutePosition;
+	bMoveAbsolute := TRUE;
+	bInPostion 	:= FALSE;
+	bInVelocity := FALSE;
+	bMoveActive := TRUE;
+	bStopped 	:= FALSE;
+	bHalted 	:= FALSE;
+	bJogDone 	:= FALSE;
+	
+	eAxisState := AXIS_MOVE_ABSOLUTE;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : move absolute requested'));		
+	
+ELSIF eAxisState = AXIS_MOVE_ABSOLUTE_DONE THEN
+	bInPostion 		:= TRUE;
+	bInVelocity		:= FALSE;
+	bMoveActive 	:= FALSE;
+	bStopped 		:= FALSE;
+	bHalted			:= FALSE;
+	bJogDone 		:= FALSE;
+	
+	bMoveAbsolute 	:= FALSE;
+	MR_MoveAbsolute := TRUE;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : move absolute done'));		
+	
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_MoveAdditive" Id="{fb34b75b-b163-4f78-8d86-ba163266f4d6}" FolderPath="Requests\">
+      <Declaration><![CDATA[METHOD MR_MoveAdditive : BOOL
+VAR_INPUT
+	lrRelativeDistance : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.lrRelativeDistance := lrRelativeDistance;
+IF eAxisState = AXIS_IDLE AND THIS^.lrRelativeDistance <> 0.0 THEN
+	bMoveAdditive := TRUE;
+	bInPostion 	:= FALSE;
+	bInVelocity := FALSE;
+	bStopped 	:= FALSE;
+	bHalted 	:= FALSE;
+	bJogDone 	:= FALSE;
+	
+	bMoveActive := TRUE;
+	eAxisState := AXIS_MOVE_ADDITIVE;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : move additive requested'));		
+	
+ELSIF eAxisState = AXIS_MOVE_ADDITIVE_DONE THEN
+	bInPostion 		:= TRUE;
+	bInVelocity 	:= FALSE;
+	bStopped 		:= FALSE;
+	bHalted 		:= FALSE;
+	bJogDone 		:= FALSE;
+	
+	bMoveAdditive 	:= FALSE;
+	MR_MoveAdditive := TRUE;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : move additive done'));		
+	
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_MoveRelative" Id="{2a81b643-7627-405b-aec6-73c9ef26366f}" FolderPath="Requests\">
+      <Declaration><![CDATA[METHOD MR_MoveRelative : BOOL
+VAR_INPUT
+	lrRelativeDistance : LREAL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.lrRelativeDistance := lrRelativeDistance;
+IF eAxisState = AXIS_IDLE AND THIS^.lrRelativeDistance <> 0.0 THEN
+	bMoveRelative := TRUE;
+	bInPostion 	:= FALSE;
+	bInVelocity := FALSE;
+	bMoveActive := TRUE;
+	bStopped 	:= FALSE;
+	bHalted 	:= FALSE;
+	bJogDone 	:= FALSE;
+	
+	eAxisState := AXIS_MOVE_RELATIVE;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : move relative requested'));			
+	
+ELSIF eAxisState = AXIS_MOVE_RELATIVE_DONE THEN
+	bMoveRelative 	:= FALSE;
+	MR_MoveRelative := TRUE;
+	
+	bInPostion 		:= TRUE;
+	bInVelocity 	:= FALSE;
+	bMoveActive 	:= FALSE;
+	bStopped 		:= FALSE;
+	bHalted 		:= FALSE;
+	bJogDone 		:= FALSE;
+	
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : move relative done'));		
+	
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_MoveVelocity" Id="{d75a8646-ed74-4ed6-8c88-6f9bf884f912}" FolderPath="Requests\">
+      <Declaration><![CDATA[METHOD MR_MoveVelocity : BOOL]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF eAxisState = AXIS_IDLE THEN
+	bMoveVelocity 	:= TRUE;
+	bInPostion 		:= FALSE;
+	bInVelocity 	:= FALSE;
+	bMoveActive 	:= TRUE;
+	bStopped 		:= FALSE;
+	bHalted 		:= FALSE;
+	bJogDone 		:= FALSE;	
+	
+	eAxisState 		:= AXIS_MOVE_VELOCITY;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : move velocity requested'));			
+	
+ELSIF eAxisState = AXIS_MOVE_VELOCITY_DONE THEN
+	bMoveVelocity 	:= FALSE;
+	MR_MoveVelocity := TRUE;
+	
+	bInPostion 		:= FALSE;
+	bInVelocity 	:= TRUE;
+	bMoveActive 	:= TRUE;
+	bStopped 		:= FALSE;
+	bHalted 		:= FALSE;
+	bJogDone 		:= FALSE;
+	
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : move velocity done'));		
+	
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_Reset" Id="{45220bcf-475b-4720-ba78-a88eabcea002}" FolderPath="Requests\">
+      <Declaration><![CDATA[METHOD MR_Reset : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF eAxisState <> AXIS_RESET AND eAxisState <> AXIS_RESET_DONE AND bError THEN
+	bReset := TRUE;
+	eAxisStateBeforeReset := eAxisState;
+	eAxisState := AXIS_RESET;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : reset requested'));			
+	
+ELSIF eAxisState = AXIS_RESET_DONE THEN
+	bError := FALSE;
+	iErrorID := 0;
+	
+	bReset := FALSE;
+	MR_Reset := TRUE;
+	
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : reset done'));		
+		
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_Stop" Id="{e9b53061-1271-4211-b7c6-35350c46b72d}" FolderPath="Requests\">
+      <Declaration><![CDATA[METHOD MR_Stop : BOOL]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF eAxisState >= AXIS_IDLE AND eAxisState <> AXIS_STOP_DONE THEN
+	IF NOT bStopLog THEN 
+		fbMachineLogger.MR_AddLogs(CONCAT(sName,' : stop requested'));
+		bStopLog := TRUE;	
+	END_IF
+	
+	bStop := TRUE;
+	eAxisState := AXIS_STOP;
+	
+ELSIF eAxisState = AXIS_STOP_DONE THEN
+	bStop 		:= FALSE;
+	MR_Stop 	:= TRUE;
+	
+	bInPostion 	:= FALSE;
+	bInVelocity := FALSE;
+	bMoveActive := FALSE;
+	bStopped 	:= TRUE;
+	bHalted 	:= FALSE;
+	bJogDone 	:= FALSE;
+	bLocked		:= TRUE;
+	
+	bStopLog 	:= FALSE;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : stop done'));			
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_Unlock" Id="{5ea2f475-f075-403d-8680-b031bdce3f3b}" FolderPath="Requests\">
+      <Declaration><![CDATA[METHOD MR_Unlock : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF eAxisState = AXIS_IDLE THEN
+	bUnlock := TRUE;
+	MR_Unlock := FALSE;
+	eAxisState := AXIS_UNLOCK;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : unlock after stop requested'));
+	
+ELSIF eAxisState = AXIS_UNLOCK_DONE THEN
+	bUnlock := FALSE;
+	MR_Unlock := TRUE;
+	bLocked := FALSE;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : unlock after stop done'));
+	
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Aborting" Id="{12ffe1e1-0597-4fd3-a66f-9cfebfa7ca77}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[(* In Derived FB.Ms_Aborting, the implementation must like
+if (AbortSuccess) then
+	Super^.Ms_Aborting();
+	doSomething();
+end_if
+*)
+METHOD PROTECTED MS_Aborting
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[bInPostion	:= FALSE;
+bInVelocity := FALSE;
+bInTorque 	:= FALSE;
+bMoveActive := FALSE;
+bStopped 	:= FALSE;
+bHalted 	:= FALSE;
+bJogDone	:= FALSE;
+bIsHomed 	:= FALSE;
+bLocked		:= FALSE;
+bBusy 		:= FALSE;
+
+	
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Couple" Id="{ec260d5b-8168-4682-a7ce-6cafefa42172}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED  MS_Couple : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_CoupleDone" Id="{818fe1de-2fc4-4a45-8001-672c8815878d}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_CoupleDone : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Decouple" Id="{ee7acd9f-4f2f-4bc6-90b3-26f995f9b8f0}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Decouple : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_DecoupleDone" Id="{f85fffb9-5a42-4aed-9192-369a98a1dd27}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_DecoupleDone : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Extension" Id="{5a3bd04d-15e4-4923-a393-8933403cdf63}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Extension : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Halt" Id="{38e998da-e3d7-4882-9c4e-1d5752a5f06a}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Halt
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_HaltDone" Id="{c8039c06-656f-46b2-8994-2d964a9e1b54}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_HaltDone
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT bHalt THEN
+	eAxisState := AXIS_IDLE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Home" Id="{993e9f1d-78cd-44a5-95a8-b4716974c714}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Home
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_HomeDone" Id="{f76626a6-0d53-4be7-b867-8852b6a3dcf6}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_HomeDone
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT bHome THEN
+	eAxisState := AXIS_IDLE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Idle" Id="{4989ad54-5167-4d62-8f67-d0253a45a7d5}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Idle
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Initializing" Id="{98a9f15c-286e-4f13-83d0-a30ae4d67a0c}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Initializing
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_MoveAbsolute" Id="{124db974-c26c-4203-86c1-cef765f72b36}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED  MS_MoveAbsolute
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_MoveAbsoluteDone" Id="{6d44cd10-a807-4493-8674-e5b1003e5a79}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_MoveAbsoluteDone
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT bMoveAbsolute THEN
+	eAxisState := AXIS_IDLE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_MoveAdditive" Id="{5b9b3143-a958-4e94-aee8-eefee706c812}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_MoveAdditive
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_MoveAdditiveDone" Id="{2d3c0c71-c342-45f5-b6a6-f817ac4bc62b}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_MoveAdditiveDone
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT bMoveAdditive THEN
+	eAxisState := AXIS_IDLE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_MoveJog" Id="{c1c56a86-f2f9-4777-97d5-4f4f36cabc94}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_MoveJog
+VAR_INPUT
+END_VAR
+VAR
+	bJogForward: BOOL;
+	bJogBackward: BOOL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_MoveJogDone" Id="{19834365-6b31-43b4-ac02-05217de2b019}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_MoveJogDone
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT bJog THEN
+	eAxisState := AXIS_IDLE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_MoveRelative" Id="{d60c1704-85ea-460d-a499-b0cd0208d2f7}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_MoveRelative
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_MoveRelativeDone" Id="{83270b66-e7ff-4127-bf46-4bedcbd80b5d}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_MoveRelativeDone
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT bMoveRelative THEN
+	eAxisState := AXIS_IDLE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_MoveTorque" Id="{21defffa-a02e-4549-9f65-85b955d4dbf5}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_MoveTorque : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_MoveTorqueDone" Id="{30b6fdb9-ebee-4d95-9260-74b025873267}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_MoveTorqueDone
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT bMoveTorque THEN
+	eAxisState := AXIS_IDLE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_MoveVelocity" Id="{a180d869-83fd-4345-bbc9-25cd493f4dbe}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_MoveVelocity
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_MoveVelocityDone" Id="{02d71176-29d7-4520-9546-d8958d19edb5}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_MoveVelocityDone
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT bMoveVelocity THEN
+	eAxisState := AXIS_IDLE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_ReadyInitialized" Id="{8a38d375-0e58-4221-a5e4-60559cff5dcb}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_ReadyInitialized
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT bInit THEN
+	eAxisState := AXIS_IDLE;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Reset" Id="{932c15a1-9ac2-466f-9e48-67fa54eba3e0}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Reset
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[(* Reset internal commands *)
+bAbort			:= FALSE;
+bHalt 			:= FALSE;
+bHome			:= FALSE;
+bJog			:= FALSE;
+bMoveAbsolute	:= FALSE;
+bMoveAdditive	:= FALSE;
+bMoveRelative	:= FALSE;
+bMoveVelocity	:= FALSE;
+bMoveTorque 	:= FALSE;
+bStop			:= FALSE;
+
+IF NOT bError THEN
+	eAxisState := AXIS_IDLE;
+END_IF
+
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_ResetDone" Id="{3790dbf5-3983-49ac-a714-f509b5d2bc7b}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_ResetDone
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT bReset THEN
+	IF eAxisStateBeforeReset >= E_AxisState.AXIS_IDLE THEN
+		eAxisState := AXIS_IDLE;
+	ELSE
+		eAxisState := AXIS_UNINITIALIZED;	
+	END_IF
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Stop" Id="{8f6f2158-777d-4006-9035-b474cf89dec2}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Stop
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_StopDone" Id="{1131e595-e5fe-4c90-8b7f-66aca2e1a1ec}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_StopDone
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT bStop THEN
+	eAxisState := AXIS_IDLE;	
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Uninitalized" Id="{15669721-a0aa-4798-bdce-37882893d6dd}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Uninitalized
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[(* Reset all commands *)
+bAbort				:= FALSE;
+bHalt 				:= FALSE;
+bHome				:= FALSE;
+bJog				:= FALSE;
+bMoveAbsolute		:= FALSE;
+bMoveAdditive		:= FALSE;
+bMoveRelative		:= FALSE;
+bMoveVelocity		:= FALSE;
+bReset				:= FALSE;
+bStop				:= FALSE;
+
+(* Reset status flags *)
+bError				:= FALSE;
+bInPostion			:= FALSE;
+bInVelocity			:= FALSE;
+bInTorque			:= FALSE;
+bIsHomed			:= FALSE;
+bMoveActive			:= FALSE;
+bPowerOn			:= FALSE;
+bStopped			:= FALSE;
+bJogDone			:= FALSE;
+bLocked				:= FALSE;
+lrActualPosition 	:= 0.0;
+lrActualVelocity 	:= 0.0;
+iErrorID			:= 0;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Unlock" Id="{e6fd07c0-ec90-40f0-bebc-5f9b7f7d5559}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Unlock
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_UnlockDone" Id="{d104c65a-7670-4512-8f1d-332493566ec4}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_UnlockDone
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT bUnlock THEN
+	eAxisState := AXIS_IDLE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Name" Id="{73ce7f39-3677-401b-96c2-cf27790a3c3d}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY Name : STRING]]></Declaration>
+      <Get Name="Get" Id="{6ce67666-3146-4358-a594-d1b5274a973d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Name := sName;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{b9674d11-e7c8-49b3-8424-f2bc0e4fa88a}">
+        <Declaration><![CDATA[
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[sName := Name;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Options" Id="{0162327e-a8e6-43e1-9511-d3a4fba7a930}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY Options : Tc2_MC2.ST_MoveOptions
+]]></Declaration>
+      <Get Name="Get" Id="{531d968b-9af4-40b3-955d-061825cdcffa}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Options := stOptions;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{5d9fef44-f9c6-4f6e-a488-902fb1ef1fa9}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[stOptions := Options;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Override" Id="{36d388d5-ffbc-41f3-a66c-b8a183f68418}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY Override : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{2987cd95-01a3-41a4-8fe5-b0a459b5dac2}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Override := lrOverride;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{dc35bba9-4258-4e25-9a2d-b0de4f1c8737}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[IF Override >= 0.0 AND Override <= 200.0 THEN
+	lrOverride := Override;
+	fbMcPower( Axis := stAxisRef, Override := lrOverride);
+END_IF]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="PowerOn" Id="{d2c38586-f3bb-4c05-ada7-f8715d55cf5e}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY PowerOn : REFERENCE TO BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{29e709fc-99b7-477e-9e21-21ab1871271a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[PowerOn REF= bPowerOn;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="SetpointPosition" Id="{3e7a9134-78bf-45cc-9f0c-b0f24e0053f3}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[PROPERTY SetpointPosition : LREAL]]></Declaration>
+      <Get Name="Get" Id="{f5d97fd4-93e7-4459-95de-c58ccd18c2f1}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[SetpointPosition := stAxisRef.NcToPlc.SetPos;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="SetpointTorque" Id="{9d0754df-91d2-4955-8949-37e033a7abf3}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[PROPERTY SetpointTorque : Lreal]]></Declaration>
+      <Get Name="Get" Id="{37b1d9ce-867f-41fc-b376-5234d760bfd6}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="SetpointVelocity" Id="{6e5a1d05-6240-4c2c-91e5-464b29f3a02a}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[PROPERTY SetpointVelocity : LREAL]]></Declaration>
+      <Get Name="Get" Id="{f199a3c5-b343-44ab-bee5-9e2601607bee}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[SetpointVelocity := stAxisRef.NcToPlc.SetVelo;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="State" Id="{630b3699-c136-47dc-94ee-364a88b65ea7}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[{attribute 'to_string'}
+PROPERTY State : REFERENCE TO E_AxisState
+]]></Declaration>
+      <Get Name="Get" Id="{87fc5ae6-73ab-4d75-a3dc-5f93a20e0019}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[State REF= eAxisState;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="StateMachine" Id="{f9b9e552-9fbc-484f-b83a-485b6063b46f}" FolderPath="StateMachine\">
+      <Declaration><![CDATA[METHOD PROTECTED StateMachine]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE eAxisState OF
+	AXIS_UNINITIALIZED:
+		MS_Uninitalized();
+		
+	AXIS_INITIALIZING:
+		MS_Initializing();
+		
+	AXIS_READY_INITIALIZED:
+		MS_ReadyInitialized();
+		
+	AXIS_IDLE:
+		MS_Idle();
+	
+	AXIS_HOME:
+		MS_Home();
+		
+	E_AxisState.AXIS_HOME_DONE:
+		MS_HomeDone();
+		
+	AXIS_MOVE_VELOCITY:
+		MS_MoveVelocity();
+	
+	AXIS_MOVE_VELOCITY_DONE:
+		MS_MoveVelocityDone();
+	
+	AXIS_MOVE_ABSOLUTE:
+		MS_MoveAbsolute();
+	
+	AXIS_MOVE_ABSOLUTE_DONE:
+		MS_MoveAbsoluteDone();
+	
+	AXIS_MOVE_ADDITIVE:
+		MS_MoveAdditive();
+	
+	AXIS_MOVE_ADDITIVE_DONE:
+		MS_MoveAdditiveDone();
+		
+	AXIS_MOVE_RELATIVE:
+		MS_MoveRelative();
+		
+	AXIS_MOVE_RELATIVE_DONE:
+		MS_MoveRelativeDone();
+	
+	AXIS_MOVE_JOG:
+		MS_MoveJog();
+	
+	AXIS_MOVE_JOG_DONE:
+		MS_MoveJogDone();
+	
+	AXIS_STOP:
+		MS_Stop();
+	
+	AXIS_STOP_DONE:
+		MS_StopDone();
+		
+	AXIS_HALT:
+		MS_Halt();
+	
+	AXIS_HALT_DONE:
+		MS_HaltDone();	
+	
+	AXIS_RESET:
+		MS_Reset();
+	
+	AXIS_RESET_DONE:
+		MS_ResetDone();
+		
+	AXIS_ABORTING:
+		MS_Aborting();
+		
+	AXIS_COUPLE:
+		MS_Couple();
+		
+	AXIS_COUPLE_DONE:
+		MS_CoupleDone();
+		
+	AXIS_DECOUPLE:
+		MS_Decouple();
+		
+	AXIS_DECOUPLE_DONE:
+		MS_DecoupleDone();
+		
+	AXIS_UNLOCK:
+		MS_Unlock();
+	
+	AXIS_UNLOCK_DONE:
+		MS_UnlockDone();
+		
+	AXIS_MOVE_TORQUE:
+		MS_MoveTorque();
+		
+	AXIS_EXTENSION:
+		MS_Extension();
+		
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="StatePlcOpen" Id="{c5442025-f85d-45b3-b4d1-712bf97d5f56}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[PROPERTY StatePlcOpen : REFERENCE TO E_AxisStatePlcOpen
+]]></Declaration>
+      <Get Name="Get" Id="{563391dc-31ac-48d3-8e85-176af22571c6}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[StatePlcOpen REF= eStatePlcOpen;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="StopDeceleration" Id="{0aef00a8-8ace-4a59-b4ab-b04a2a2ad1b3}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY StopDeceleration : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{35ad1bbc-933f-44a3-932d-4fa98d4f80ae}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[StopDeceleration := lrStopDeceleration;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{9eec5d3b-b41e-4f6c-aa30-87be872a203d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[lrStopDeceleration := StopDeceleration;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="StopJerk" Id="{7c083222-a419-4300-975c-e6a9f007d5d4}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[PROPERTY StopJerk : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{6c10d7ae-099c-41aa-8204-1df59e5c7ea3}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[StopJerk := lrStopJerk;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{6d2e33a8-7122-4523-86d5-73cdf999b475}">
+        <Declaration><![CDATA[
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[lrStopJerk := StopJerk; ]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Stopped" Id="{455f6ef8-aacf-4192-be1c-cac6e9ecf6b5}" FolderPath="Properties\Status\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY Stopped : REFERENCE TO BOOL]]></Declaration>
+      <Get Name="Get" Id="{f2176b20-ff3d-429d-a3a8-a0fdb225d64e}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Stopped REF= bStopped;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Unit" Id="{f40f71ed-6426-473d-81e3-97cecb10d24e}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[PROPERTY Unit : STRING]]></Declaration>
+      <Get Name="Get" Id="{e3c663c9-1f17-49f0-a2ce-1fc44e09654f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Unit := sUnit;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{d3d6a996-3de3-4840-842c-e827fcdc03db}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[sUnit := Unit;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Velocity" Id="{08469c28-4acd-49d3-b7e5-3b56c7a2fd61}" FolderPath="Properties\Parameters\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY Velocity : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{ee6f2977-c26c-4b81-ba3c-e0fa61116313}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Velocity := lrVelocity;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{855db6f4-0bbd-4ae8-9a2d-46674677367b}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[lrVelocity := Velocity;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <LineIds Name="FB_UniversalAxis">
+      <LineId Id="357" Count="0" />
+      <LineId Id="100" Count="1" />
+      <LineId Id="275" Count="3" />
+      <LineId Id="102" Count="0" />
+      <LineId Id="132" Count="2" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Acceleration.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Acceleration.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Active.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.ActualPosition.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.ActualTorque.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.ActualVelocity.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.AxisErrorID.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.AxisRef.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.AxisRef.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.BufferMode.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.BufferMode.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Busy.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Coupled.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Deceleration.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Deceleration.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Direction.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Direction.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.ErrorID.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Halted.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.InPosition.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.InTorque.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.InVelocity.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.IsHomed.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Jerk.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Jerk.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.JogAcceleration.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.JogAcceleration.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.JogDeceleration.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.JogDeceleration.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.JogDirection.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.JogDirection.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.JogDone.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.JogJerk.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.JogJerk.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.JogMode.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.JogMode.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.JogPosition.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.JogPosition.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.JogVelocity.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.JogVelocity.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.LagError.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Locked.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MoveActive.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MR_Abort">
+      <LineId Id="3" Count="9" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MR_Couple">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MR_Decouple">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MR_FirstCycle">
+      <LineId Id="3" Count="4" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MR_Halt">
+      <LineId Id="3" Count="22" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MR_Home">
+      <LineId Id="3" Count="14" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MR_HomeEx">
+      <LineId Id="7" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="8" Count="4" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="13" Count="2" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MR_Init">
+      <LineId Id="3" Count="2" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="6" Count="1" />
+      <LineId Id="9" Count="5" />
+      <LineId Id="16" Count="4" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MR_Jog">
+      <LineId Id="3" Count="29" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MR_MoveAbsolute">
+      <LineId Id="3" Count="24" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MR_MoveAdditive">
+      <LineId Id="31" Count="0" />
+      <LineId Id="3" Count="0" />
+      <LineId Id="5" Count="21" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MR_MoveRelative">
+      <LineId Id="32" Count="0" />
+      <LineId Id="3" Count="0" />
+      <LineId Id="5" Count="23" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MR_MoveVelocity">
+      <LineId Id="3" Count="24" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MR_Reset">
+      <LineId Id="3" Count="14" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MR_Stop">
+      <LineId Id="3" Count="23" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MR_Unlock">
+      <LineId Id="3" Count="11" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_Aborting">
+      <LineId Id="49" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="55" Count="0" />
+      <LineId Id="37" Count="5" />
+      <LineId Id="50" Count="1" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_Couple">
+      <LineId Id="44" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_CoupleDone">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_Decouple">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_DecoupleDone">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_Extension">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_Halt">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_HaltDone">
+      <LineId Id="2" Count="0" />
+      <LineId Id="10" Count="1" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_Home">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_HomeDone">
+      <LineId Id="2" Count="0" />
+      <LineId Id="6" Count="1" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_Idle">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_Initializing">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_MoveAbsolute">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_MoveAbsoluteDone">
+      <LineId Id="5" Count="1" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_MoveAdditive">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_MoveAdditiveDone">
+      <LineId Id="10" Count="1" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_MoveJog">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_MoveJogDone">
+      <LineId Id="5" Count="1" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_MoveRelative">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_MoveRelativeDone">
+      <LineId Id="16" Count="1" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_MoveTorque">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_MoveTorqueDone">
+      <LineId Id="10" Count="1" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_MoveVelocity">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_MoveVelocityDone">
+      <LineId Id="5" Count="1" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_ReadyInitialized">
+      <LineId Id="6" Count="2" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_Reset">
+      <LineId Id="30" Count="8" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="96" Count="0" />
+      <LineId Id="100" Count="1" />
+      <LineId Id="99" Count="0" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="90" Count="1" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_ResetDone">
+      <LineId Id="3" Count="5" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_Stop">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_StopDone">
+      <LineId Id="5" Count="1" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_Uninitalized">
+      <LineId Id="3" Count="15" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="19" Count="8" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_Unlock">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.MS_UnlockDone">
+      <LineId Id="3" Count="1" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Name.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Name.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Options.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Options.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Override.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Override.Set">
+      <LineId Id="3" Count="2" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.PowerOn.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.SetpointPosition.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.SetpointTorque.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.SetpointVelocity.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.State.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.StateMachine">
+      <LineId Id="3" Count="86" />
+      <LineId Id="101" Count="0" />
+      <LineId Id="100" Count="0" />
+      <LineId Id="90" Count="0" />
+      <LineId Id="102" Count="0" />
+      <LineId Id="91" Count="2" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.StatePlcOpen.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.StopDeceleration.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.StopDeceleration.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.StopJerk.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.StopJerk.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Stopped.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Unit.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Unit.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Velocity.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_UniversalAxis.Velocity.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

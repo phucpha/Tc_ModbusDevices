@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_AxisHome" Id="{b8692786-ca62-4082-a745-c3e37dad9fcf}">
+    <Declaration><![CDATA[INTERFACE I_AxisHome
+]]></Declaration>
+    <Property Name="IsHomed" Id="{41590ac8-0901-490c-9e30-119207070f64}">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY IsHomed : REFERENCE TO BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{cb00903a-1e3d-4333-a10d-4be68a813289}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Method Name="MR_Home" Id="{593b994e-8383-4bb7-9dea-3cd721ef8ae6}">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)METHOD MR_Home : BOOL
+VAR_INPUT
+	lrHomePosition : LREAL;
+END_VAR]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

@@ -1,0 +1,372 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_ASDAB3" Id="{7728205a-ca70-4528-9e93-ba1dbd975233}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_ASDAB3 EXTENDS FB_UniversalAxis IMPLEMENTS I_UniversalAxis, I_AxisMoveAbsolute, I_AxisHomeEx
+VAR	
+	arruMonitor : ARRAY[0..4] OF U_Word2Dint;		(*Status Register mornitoring 1-5 , P009-P013*)
+	uPositionCmd : U_Word2Dint;
+	wDoStatus : WORD;
+	wDiStatus : WORD;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[bError := bModbusError OR iErrorID<>0;
+CASE eAxisState OF
+	AXIS_INITIALIZING..AXIS_RESET_DONE, AXIS_ABORTING:
+		tonConfirmReallyError(
+			IN := bError OR bModbusError,
+			PT := timeConfirmReallyError,
+			Q => bReallyError 
+		);
+END_CASE
+SUPER^();]]></ST>
+    </Implementation>
+    <Folder Name="Internal" Id="{0ebb7060-15ef-4b97-94f1-2b6b3235dc43}" />
+    <Folder Name="Param" Id="{d3ee4170-a317-4af9-8a92-02e7e51dd3ce}" />
+    <Folder Name="Request" Id="{f68a6f42-ef3a-4e8c-a0d5-8912a7cf7839}" />
+    <Folder Name="Status" Id="{21128ae6-cc7e-4736-97e0-450a961e8f3d}" />
+    <Property Name="ActualPosition" Id="{1928e4ce-f248-4b1c-a678-98264c7c30c5}" FolderPath="Status\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY ActualPosition : REFERENCE TO LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{bb3e489b-d0b8-4f74-8cf7-73b43e231c48}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ActualPosition REF= lrActualPosition;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="Convert" Id="{2d8b4d31-8fc9-405c-84f3-edb584380c0d}" FolderPath="Request\">
+      <Declaration><![CDATA[METHOD Convert : BOOL
+VAR_INPUT
+	iRegionNo	:	INT;
+	pReadData	:	POINTER TO word;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+CASE iRegionNo OF 
+	0:	// positionFB, SpeedFB, and Torque FB
+		arruMonitor[0].iWord[0] := pReadData[0];
+		arruMonitor[0].iWord[1] := pReadData[1];
+		lrActualPosition := DINT_TO_LREAL(arruMonitor[0].idInt);
+
+	1:	// DO Register
+		wDoStatus := pReadData[0];
+		bIsHomed := wDoStatus.8;
+	2:
+		iErrorID := WORD_TO_UDINT(pReadData[0]);
+	3:
+		wDiStatus := pReadData[0];
+	
+	
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="InPosition" Id="{fdcba98e-dfc2-44a3-90e1-1d47110fd6e7}" FolderPath="Status\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY InPosition : REFERENCE TO BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{311c2db5-e528-46bf-8a54-4443989880e8}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[InPosition REF= bInPostion;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="IsHomed" Id="{ce510d95-944b-42ae-acdd-9e88595ebe56}" FolderPath="Status\">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY IsHomed : REFERENCE TO BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{56c6ae64-0b5b-4965-9aa3-99eb2d178bac}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[IsHomed REF= bIsHomed;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="MR_HomeEx" Id="{386ec8b7-97e0-4780-84d1-24d9a3d78b47}" FolderPath="Request\">
+      <Declaration><![CDATA[(* Homing not require set the home position *)
+METHOD MR_HomeEx : BOOL]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF eAxisState = AXIS_IDLE AND NOT bIsHomed THEN
+	bHome := TRUE;
+	eAxisState := AXIS_HOME;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : home position requested'));
+	
+ELSIF eAxisState = AXIS_HOME_DONE THEN
+	bHome := FALSE;
+	MR_HomeEx := TRUE;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : home position done'));		
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MR_MoveAbsolute" Id="{45274937-0cc8-4905-82af-1b172bffd379}" FolderPath="Request\">
+      <Declaration><![CDATA[METHOD MR_MoveAbsolute : BOOL
+VAR_INPUT
+	lrAbsolutePosition : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF eAxisState = AXIS_IDLE AND THIS^.lrActualPosition <> lrAbsolutePosition THEN
+	THIS^.lrAbsolutePosition := lrAbsolutePosition;
+	bMoveAbsolute := TRUE;
+	bInPostion 	:= FALSE;
+	bInVelocity := FALSE;
+	bMoveActive := TRUE;
+	bStopped 	:= FALSE;
+	bHalted 	:= FALSE;
+	bJogDone 	:= FALSE;
+	
+	eAxisState := AXIS_MOVE_ABSOLUTE;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : move absolute requested'));		
+	
+ELSIF eAxisState = AXIS_MOVE_ABSOLUTE_DONE THEN
+	bInPostion 		:= TRUE;
+	bInVelocity		:= FALSE;
+	bMoveActive 	:= FALSE;
+	bStopped 		:= FALSE;
+	bHalted			:= FALSE;
+	bJogDone 		:= FALSE;
+	bMoveAbsolute 	:= FALSE;
+	MR_MoveAbsolute := TRUE;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : move absolute done'));		
+	
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Aborting" Id="{25ef37e6-ad5e-4fdd-9161-5a30559bd343}" FolderPath="Internal\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Aborting
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[arrAddressWrite[1][2] := 2#0;
+IF NOT wDoStatus.1 THEN
+	SUPER^.MS_Aborting();
+	eAxisState	:= AXIS_UNINITIALIZED;	
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Home" Id="{a428f7ae-38a3-4204-bed4-f4c6e5609258}" FolderPath="Internal\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Home
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[arrAddressWrite[1][2].3 := TRUE;
+IF bIsHomed THEN
+	eAxisState := AXIS_HOME_DONE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Idle" Id="{e42f8593-f255-4706-ab1d-7541a38705f8}" FolderPath="Internal\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Idle
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[arrAddressWrite[1][2].3 := FALSE;
+arrAddressWrite[1][2].2 := FALSE;
+arrAddressWrite[1][2].1 := FALSE;
+arrAddressWrite[1][2].0 := TRUE;
+SUPER^.MS_Idle();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Initializing" Id="{58272ea7-7e1f-4f59-b595-64b2ae173b1d}" FolderPath="Internal\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Initializing
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SUPER^.MS_Initializing();
+arrAddressWrite[1][2] := 2#1;
+IF wDoStatus.0 AND NOT wDoStatus.1 THEN
+	eAxisState := AXIS_READY_INITIALIZED;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_MoveAbsolute" Id="{ed22415c-fecf-4764-80f8-1baf3896dfaf}" FolderPath="Internal\">
+      <Declaration><![CDATA[METHOD PROTECTED  MS_MoveAbsolute
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[uPositionCmd.idInt := LREAL_TO_DINT(lrAbsolutePosition);
+arrAddressWrite[0][2] := uPositionCmd.iWord[0];
+arrAddressWrite[0][3] := uPositionCmd.iWord[1];
+arrAddressWrite[1][2].2 := NOT wDiStatus.2;
+IF F_InRange(
+	bound1 := lrAbsolutePosition+50,
+	bound2 := lrAbsolutePosition-50,
+	value := lrActualPosition
+	)
+THEN
+	eAxisState := AXIS_MOVE_ABSOLUTE_DONE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Reset" Id="{4995f68f-bc72-4b4c-bf4b-bfff6ddd7a41}" FolderPath="Internal\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Reset
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[arrAddressWrite[1][2].1 := NOT wDiStatus.1;
+IF NOT bError THEN
+	eAxisState := AXIS_RESET_DONE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Uninitalized" Id="{0b204139-0d12-4045-8d09-f6e8e2ca518e}" FolderPath="Internal\">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Uninitalized
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SUPER^.MS_Uninitalized();
+bBusy := FALSE;
+// Read
+arrAddressRead[0][0] := 16#12;	// monitoring position, speed, torque : P0.009
+arrAddressRead[0][1] := 2;
+arrAddressRead[0][2] := E_ModbusFunction.ReadHoldingRegisters;
+
+arrAddressRead[1][0] := 16#5C; // Regiter Output: P0.046
+arrAddressRead[1][1] := 1;
+arrAddressRead[1][2] := E_ModbusFunction.ReadHoldingRegisters;
+
+arrAddressRead[2][0] := 16#02; // errorID: P0.001
+arrAddressRead[2][1] := 1;
+arrAddressRead[2][2] := E_ModbusFunction.ReadHoldingRegisters;
+
+arrAddressRead[3][0] := 16#40E; // Di Control
+arrAddressRead[3][1] := 1;
+arrAddressRead[3][2] := E_ModbusFunction.ReadHoldingRegisters;
+iNumAddRegionRead := 4;
+
+// write
+arrAddressWrite[0][0] := 16#706; // Position cmd PR51 data
+arrAddressWrite[0][1] := 2;
+arrAddressWrite[0][2] := 0;
+arrAddressWrite[0][10]	:= E_ModbusFunction.WriteMultipleRegisters;
+(*	// DI register cmd:
+	bit1: On : level Active
+	bit2: reset alarm : rise trig
+	bit3: execute run abs position
+*)
+arrAddressWrite[1][0] := 16#40E;
+arrAddressWrite[1][1] := 1;
+arrAddressWrite[1][2] := 0;
+arrAddressWrite[1][10] := E_ModbusFunction.WriteSingleRegister;
+
+arrAddressWrite[2][0] := 16#30C;	//P3.006 Digital input (DI) control switch
+arrAddressWrite[2][1] := 1;
+arrAddressWrite[2][2] := 16#1FFF;	//never change this value
+arrAddressWrite[2][10] := E_ModbusFunction.WriteSingleRegister;
+
+iNumAddRegionWrite := 3;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="SetpointPosition" Id="{a0e91e2d-b386-46a8-8075-b6975702a398}" FolderPath="Status\">
+      <Declaration><![CDATA[(*Please note this properties currently return the lrAbsolutePosition,
+-If you expand the FB to implement other I_AxisMove..., you need to change this property's implement, and this note.
+*)
+PROPERTY SetpointPosition : LREAL]]></Declaration>
+      <Get Name="Get" Id="{21d3a938-6aa0-48f1-b285-93005d6d5a2f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[SetpointPosition := lrAbsolutePosition;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <LineIds Name="FB_ASDAB3">
+      <LineId Id="73" Count="7" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="21" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3.ActualPosition.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3.Convert">
+      <LineId Id="124" Count="0" />
+      <LineId Id="7" Count="1" />
+      <LineId Id="132" Count="1" />
+      <LineId Id="119" Count="0" />
+      <LineId Id="127" Count="0" />
+      <LineId Id="137" Count="1" />
+      <LineId Id="147" Count="0" />
+      <LineId Id="125" Count="0" />
+      <LineId Id="146" Count="0" />
+      <LineId Id="153" Count="1" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="78" Count="0" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="20" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3.InPosition.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3.IsHomed.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3.MR_HomeEx">
+      <LineId Id="7" Count="8" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3.MR_MoveAbsolute">
+      <LineId Id="3" Count="19" />
+      <LineId Id="24" Count="3" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3.MS_Aborting">
+      <LineId Id="7" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="6" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3.MS_Home">
+      <LineId Id="6" Count="2" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3.MS_Idle">
+      <LineId Id="7" Count="3" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3.MS_Initializing">
+      <LineId Id="5" Count="0" />
+      <LineId Id="7" Count="2" />
+      <LineId Id="6" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3.MS_MoveAbsolute">
+      <LineId Id="6" Count="4" />
+      <LineId Id="13" Count="3" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3.MS_Reset">
+      <LineId Id="6" Count="2" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3.MS_Uninitalized">
+      <LineId Id="5" Count="0" />
+      <LineId Id="8" Count="38" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_ASDAB3.SetpointPosition.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

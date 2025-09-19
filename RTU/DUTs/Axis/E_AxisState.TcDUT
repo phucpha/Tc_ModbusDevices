@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_AxisState" Id="{14a54f84-dccb-401c-8e92-981bc2bf3f3c}">
+    <Declaration><![CDATA[{attribute 'strict'}
+TYPE E_AxisState :
+(
+	AXIS_UNINITIALIZED		:= 0,	(* Axis is not prepared to work - power is off *)
+	AXIS_INITIALIZING		:= 10,	(* Axis is preparing to power - reset FB and power on *)
+	AXIS_READY_INITIALIZED	:= 20,	(*  *)
+	AXIS_IDLE				:= 30,	(* Axis is ready for orders *)
+	AXIS_HOME				:= 40,	(* Axis is homing to reference point *)
+	AXIS_HOME_DONE			:= 50,	(* Axis homing procedure has finished - fererence position has been found *)
+	AXIS_MOVE_VELOCITY		:= 60,	(* Axis started continous motion to setpoint velocity - accelerating *)
+	AXIS_MOVE_VELOCITY_DONE	:= 70,	(* Axis reached constant setpoint velocity for continous motion *)
+	AXIS_MOVE_ABSOLUTE		:= 80,	(* Axis is moving to absolute position - discrete motion *)
+	AXIS_MOVE_ABSOLUTE_DONE	:= 90,	(* Axis movement to absolute position finished *)
+	AXIS_MOVE_ADDITIVE		:= 100,	(* Axis relative movement by desired distance *)
+	AXIS_MOVE_ADDITIVE_DONE	:= 110,	(* Axis relative relative movement by desired distance finished *)
+	AXIS_MOVE_RELATIVE		:= 120,	(* Axis relative movement by desired distance *)
+	AXIS_MOVE_RELATIVE_DONE	:= 130,	(* Axis relative relative movement by desired distance finished *)
+	AXIS_MOVE_JOG			:= 140,	(* Axis manual move using jog function *)
+	AXIS_MOVE_JOG_DONE		:= 150,	(* Axis jog done *)
+	AXIS_STOP				:= 160,	(* Axis is stopping *)
+	AXIS_STOP_DONE			:= 170,	(* Axis stopped *)
+	AXIS_HALT				:= 180,	(* Axis halts started motion command *)
+	AXIS_HALT_DONE			:= 190,	(* Axis motion halted *)
+	AXIS_RESET				:= 200,	(* Axis is resseting all function blocks and occured errors *)
+	AXIS_RESET_DONE			:= 210,	(* Axis reset procedure done *)
+	AXIS_COUPLE				:= 220, (* Axis is synchronizing to another master axis *)
+	AXIS_COUPLE_DONE		:= 230,	(* Axis coupled to another master axis*)
+	AXIS_DECOUPLE			:= 240,	(* Axis is decoupling from synchronized motion *)
+	AXIS_DECOUPLE_DONE		:= 250,	(* Axis decoupled from synchronizing motion*)
+	AXIS_UNLOCK				:= 260,	(* Axis is unlocking after stop command *)
+	AXIS_UNLOCK_DONE		:= 270,	(* Axis unlocked after stop command *)
+	AXIS_MOVE_TORQUE		:= 280, (* Axis torque movement by *)
+	AXIS_MOVE_TORQUE_DONE	:= 290, (* Axis torque movement by desired torque finished*)
+	AXIS_EXTENSION			:= 999,	(* Special state used by child FB's to implement additional states *)
+	AXIS_ABORTING			:= -10	(* Aborting *)
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

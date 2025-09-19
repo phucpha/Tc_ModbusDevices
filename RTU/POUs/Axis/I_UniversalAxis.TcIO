@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_UniversalAxis" Id="{8e427913-59b3-4d06-887a-4072fb08d6c0}">
+    <Declaration><![CDATA[INTERFACE I_UniversalAxis
+]]></Declaration>
+    <Property Name="Active" Id="{a649d022-91f1-412a-8e03-b31ea5ba4b97}">
+      <Declaration><![CDATA[PROPERTY Active : REFERENCE TO BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{a4122a89-64ba-40bf-8b93-a6150501d41a}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="Error" Id="{5fd1ffb0-7593-4fff-a0ad-e35dfc2e2777}">
+      <Declaration><![CDATA[PROPERTY Error : REFERENCE TO BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{5951bb7b-f3b2-4424-aebb-b6a84236b8f1}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="ErrorID" Id="{70152098-3716-413a-8ea0-a71ad208d89f}">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY ErrorID : REFERENCE TO UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{3b2e3ccf-619d-40f7-9f5b-b74efc8c41cb}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Method Name="MR_Abort" Id="{2d6f31f7-b221-40f9-a6fa-79a04dce778a}">
+      <Declaration><![CDATA[METHOD MR_Abort : BOOL
+]]></Declaration>
+    </Method>
+    <Method Name="MR_Init" Id="{b7d863a9-e9f4-4383-bab7-e39162e0c718}">
+      <Declaration><![CDATA[METHOD MR_Init : BOOL]]></Declaration>
+    </Method>
+    <Method Name="MR_Reset" Id="{fd624c9b-c86b-4c51-ada4-da9d67891b35}">
+      <Declaration><![CDATA[METHOD MR_Reset : BOOL
+]]></Declaration>
+    </Method>
+    <Property Name="Name" Id="{46be5bf4-905e-4f1e-b29e-b8f780078568}">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY Name : STRING]]></Declaration>
+      <Get Name="Get" Id="{a23bcdfa-a40e-45a0-bd97-329ecdda126e}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+      <Set Name="Set" Id="{826a4881-a8e4-4867-989f-fd1cdd911533}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+    <Property Name="State" Id="{91b2d6bb-3a85-4a51-a619-90fec7684f0d}">
+      <Declaration><![CDATA[{attribute 'to_string'}
+PROPERTY State : REFERENCE TO E_AxisState
+]]></Declaration>
+      <Get Name="Get" Id="{a8157ad4-c10a-474d-9072-eb29727172e0}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+  </Itf>
+</TcPlcObject>

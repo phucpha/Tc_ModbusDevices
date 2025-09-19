@@ -19,7 +19,7 @@
     <Company>NewEngineer</Company>
     <Released>false</Released>
     <Title>Tc_ModbusDevices</Title>
-    <ProjectVersion>1.1.1.0</ProjectVersion>
+    <ProjectVersion>2.1.1.1</ProjectVersion>
     <LibraryCategories>
       <LibraryCategory>
         <Id>{34b615cd-45ba-4d29-985a-190ea3e88038}</Id>
@@ -37,12 +37,6 @@
     <DocFormat>reStructuredText</DocFormat>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="DUTs\Delta\E_ASDAB3_State.TcDUT">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DUTs\Delta\E_ASDAB3_Status.TcDUT">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="DUTs\ServoIpro\E_IProCtrlMode.TcDUT">
       <SubType>Code</SubType>
     </Compile>
@@ -55,8 +49,9 @@
     <Compile Include="DUTs\ServoIpro\E_IPro_PositionCmdModeSelection.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DUTs\ServoIpro\E_IPro_State.TcDUT">
+    <Compile Include="DUTs\Axis\E_AxisState.TcDUT">
       <SubType>Code</SubType>
+      <ExcludeFromBuild>false</ExcludeFromBuild>
     </Compile>
     <Compile Include="DUTs\VFD\E_VfdMdriverFaultInfor.TcDUT">
       <SubType>Code</SubType>
@@ -67,9 +62,14 @@
     <Compile Include="DUTs\VFD\E_VFD_Status.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DUTs\Visu\ServoIpro\E_VisuCtrlSingleAxisIproState.TcDUT">
+    <Compile Include="DUTs\Visu\Axis\E_VisuCtrlAxisJogMode.TcDUT">
       <SubType>Code</SubType>
-      <ExcludeFromBuild>false</ExcludeFromBuild>
+    </Compile>
+    <Compile Include="DUTs\Visu\Axis\E_VisuCtrlSingleAxisState.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\Visu\Axis\ST_VisuCtrlAxisFrame.TcDUT">
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="DUTs\Visu\ServoIpro\ST_VisuCtrlAxisIproFrame.TcDUT">
       <SubType>Code</SubType>
@@ -86,7 +86,28 @@
     <Compile Include="POU.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Delta\FB_ASDAB3_RTU.TcPOU">
+    <Compile Include="POUs\Axis\FB_UniversalAxis.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Axis\I_AxisHome.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Axis\I_AxisHomeEx.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Axis\I_AxisMoveAbsolute.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Axis\I_AxisMoveTorque.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Axis\I_AxisMoveVelocity.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Axis\I_UniversalAxis.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Delta\FB_ASDAB3.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\EmkoTemperature\FB_TemperatureRelativeHumiditySensor_Emko.TcPOU">
@@ -134,16 +155,18 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="DUTs" />
-    <Folder Include="DUTs\Delta" />
+    <Folder Include="DUTs\Axis" />
     <Folder Include="DUTs\Visu" />
     <Folder Include="DUTs\ServoIpro" />
     <Folder Include="DUTs\VFD" />
+    <Folder Include="DUTs\Visu\Axis" />
     <Folder Include="DUTs\Visu\ServoIpro" />
     <Folder Include="DUTs\Visu\VFD" />
     <Folder Include="GVLs" />
     <Folder Include="POUs\EmkoTemperature" />
     <Folder Include="POUs\Ipro" />
     <Folder Include="POUs\Delta" />
+    <Folder Include="POUs\Axis" />
     <Folder Include="POUs\Smowo" />
     <Folder Include="POUs\VFD" />
     <Folder Include="TEST" />
@@ -189,6 +212,163 @@
     <Content Include="TEST\Readme.txt">
       <SubType>Content</SubType>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <SubObject Include="FB_ASDAB3.InPosition" />
+    <SubObject Include="FB_ASDAB3.IsHomed" />
+    <SubObject Include="FB_UniversalAxis.Acceleration">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.ActualPosition">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.ActualTorque">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.ActualVelocity">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.AxisErrorID">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.AxisRef">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.BufferMode">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.Coupled">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.Deceleration">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.Direction">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.Halted">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.InPosition">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.InTorque">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.InVelocity">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.IsHomed">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.Jerk">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.JogAcceleration">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.JogDeceleration">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.JogDirection">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.JogDone">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.JogJerk">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.JogMode">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.JogPosition">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.JogVelocity">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.LagError">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.Locked">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.MoveActive">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.MR_Couple">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.MR_Decouple">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.MR_Halt">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.MR_Home">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.MR_HomeEx">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.MR_Jog">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.MR_MoveAbsolute">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.MR_MoveAdditive">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.MR_MoveRelative">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.MR_MoveVelocity">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.MR_Stop">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.MR_Unlock">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.Options">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.Override">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.PowerOn">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.SetpointPosition">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.SetpointTorque">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.SetpointVelocity">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.StatePlcOpen">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.StopDeceleration">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.StopJerk">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.Stopped">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="FB_UniversalAxis.Velocity">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </SubObject>
+    <SubObject Include="I_AxisHomeEx.IsHomed" />
+    <SubObject Include="I_AxisHomeEx.MR_HomeEx" />
+    <SubObject Include="I_UniversalAxis.ErrorID" />
   </ItemGroup>
   <ProjectExtensions>
     <PlcProjectOptions>

@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_AxisMoveVelocity" Id="{954a6d1b-e80f-4325-9e32-de16f7fffc3b}">
+    <Declaration><![CDATA[INTERFACE I_AxisMoveVelocity
+]]></Declaration>
+    <Property Name="ActualVelocity" Id="{fd905992-85f3-4555-b476-03e7e5e5cf11}">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY ActualVelocity : REFERENCE TO LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{68c39e10-720c-44a2-8242-d41a36994aaf}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="InVelocity" Id="{b8835cef-71bb-44ae-9cec-92ec11ef5961}">
+      <Declaration><![CDATA[PROPERTY InVelocity : REFERENCE TO BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{624ba188-46ec-4cec-bde7-f715d12efa1e}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Method Name="MR_MoveVelocity" Id="{2f656dae-af98-4768-9f4e-48e771091d7f}">
+      <Declaration><![CDATA[METHOD MR_MoveVelocity : BOOL]]></Declaration>
+    </Method>
+    <Property Name="SetpointVelocity" Id="{9de7cef5-8c12-4d38-b326-f04a17b30dde}">
+      <Declaration><![CDATA[PROPERTY SetpointVelocity : LREAL]]></Declaration>
+      <Get Name="Get" Id="{279d630b-986f-4ed8-b185-162be3bf02b0}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+  </Itf>
+</TcPlcObject>
