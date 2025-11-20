@@ -3,118 +3,150 @@
   <POU Name="POU" Id="{b05d93c8-4a6b-4f07-aafd-3dcd31964579}" SpecialFunc="None">
     <Declaration><![CDATA[PROGRAM POU
 VAR
-	fbMasterRTU : FB_ModbusMaster_PcCOM;
-	Ipro	: FB_IPRO_ModbusRTU;
-	asda : FB_ASDAB3;//FB_ASDAB3_RTU;
-	stAsda : ST_VisuCtrlAxisFrame;
-	eVisuCtrl : E_VisuCtrlSingleAxisState;
-	nState : UINT := 10;
-	nStateAuto : UINT := 0;
-	eAsdaManual : E_VisuCtrlSingleAxisState;
-	bFirstCycle : BOOL := TRUE;
-	fPosition : LREAL;
+//	fbMasterRTU : FB_ModbusMaster_PcCOM;
+//	Ipro	: FB_IPRO_ModbusRTU;
+//	asda : FB_ASDAB3;//FB_ASDAB3_RTU;
+//	stAsda : ST_VisuCtrlAxisFrame;
+//	eVisuCtrl : E_VisuCtrlSingleAxisState;
+//	nState : UINT := 10;
+//	nStateAuto : UINT := 0;
+//	eAsdaManual : E_VisuCtrlSingleAxisState;
+//	bFirstCycle : BOOL := TRUE;
+//	fPosition : LREAL;
+
+///////////////////////////////////////
+//	fbModbusMasterTcp1 : FB_ModbusMasterTcpIp;
+//	fbModbusMasterTcp2 : FB_ModbusMasterTcpIp;
+//	SlaveTcp1 : FB_LoadCell_Smowo_Tcp;
+//	SlaveTcp2 : FB_LoadCell_Smowo_Tcp;
+//	bFirstCycle : BOOL := TRUE;
+//	bRun : BOOL := TRUE;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// first cycle
-IF bFirstCycle THEN
-	bFirstCycle := FALSE;
-	fbMasterRTU.ScanTime := 1000;
-	fbMasterRTU.Timeout := 300;
-	fbMasterRTU.RegisterSlave(asda);
-	asda.FirstCycle(
-		sName :='',
-		iUnitID := 3
-	);
+      <ST><![CDATA[//// first cycle
+//IF bFirstCycle THEN
+//	bFirstCycle := FALSE;
+//	fbMasterRTU.ScanTime := 1000;
+//	fbMasterRTU.Timeout := 300;
+//	fbMasterRTU.RegisterSlave(asda);
+//	asda.FirstCycle(
+//		sName :='',
+//		iUnitID := 3
+//	);
 	
-END_IF
-CASE nState OF
-	0:// uinit
+//END_IF
+//CASE nState OF
+//	0:// uinit
 		
-	10:// init
-		IF fbMasterRTU.Run() THEN
-			nState := 20;
-		END_IF
-	20: // manual
-		stAsda.bError := asda.Error;
-		IF stAsda.btnAbort THEN
-			stAsda.btnAbort := FALSE;
-			eAsdaManual := VISU_CTRL_AXIS_ABORT;
+//	10:// init
+//		IF fbMasterRTU.Run() THEN
+//			nState := 20;
+//		END_IF
+//	20: // manual
+//		stAsda.bError := asda.Error;
+//		IF stAsda.btnAbort THEN
+//			stAsda.btnAbort := FALSE;
+//			eAsdaManual := VISU_CTRL_AXIS_ABORT;
 			
-		ELSIF stAsda.btnReset THEN
-			stAsda.btnReset := FALSE;
-			eAsdaManual := VISU_CTRL_AXIS_RESET;
-		END_IF
-		CASE eAsdaManual OF
-			VISU_CTRL_AXIS_WAIT_FOR_CMD 	:
-				IF stAsda.btnAbort THEN
-					stAsda.btnAbort := FALSE;
-					eAsdaManual := VISU_CTRL_AXIS_ABORT;
+//		ELSIF stAsda.btnReset THEN
+//			stAsda.btnReset := FALSE;
+//			eAsdaManual := VISU_CTRL_AXIS_RESET;
+//		END_IF
+//		CASE eAsdaManual OF
+//			VISU_CTRL_AXIS_WAIT_FOR_CMD 	:
+//				IF stAsda.btnAbort THEN
+//					stAsda.btnAbort := FALSE;
+//					eAsdaManual := VISU_CTRL_AXIS_ABORT;
 					
-				ELSIF stAsda.btnReset THEN
-					stAsda.btnReset := FALSE;
-					eAsdaManual := VISU_CTRL_AXIS_RESET;
+//				ELSIF stAsda.btnReset THEN
+//					stAsda.btnReset := FALSE;
+//					eAsdaManual := VISU_CTRL_AXIS_RESET;
 					
-				ELSIF stAsda.btnInit THEN
-					 stAsda.btnInit := FALSE;
-					eAsdaManual := VISU_CTRL_AXIS_INIT;
+//				ELSIF stAsda.btnInit THEN
+//					 stAsda.btnInit := FALSE;
+//					eAsdaManual := VISU_CTRL_AXIS_INIT;
 					
-				ELSIF stAsda.btnHome THEN
-					stAsda.btnHome := FALSE;
-					eAsdaManual := VISU_CTRL_AXIS_HOME;
+//				ELSIF stAsda.btnHome THEN
+//					stAsda.btnHome := FALSE;
+//					eAsdaManual := VISU_CTRL_AXIS_HOME;
 					
-				ELSIF stAsda.btnMoveAbsolute THEN
-					stAsda.btnMoveAbsolute := FALSE;
-					eAsdaManual := VISU_CTRL_AXIS_MOVE_ABSOLUTE;
-				END_IF
+//				ELSIF stAsda.btnMoveAbsolute THEN
+//					stAsda.btnMoveAbsolute := FALSE;
+//					eAsdaManual := VISU_CTRL_AXIS_MOVE_ABSOLUTE;
+//				END_IF
 				
-			VISU_CTRL_AXIS_INIT				:
-				asda.MR_Init();
-				IF asda.Active AND NOT asda.Busy THEN
-					eAsdaManual := VISU_CTRL_AXIS_WAIT_FOR_CMD;
-				END_IF
+//			VISU_CTRL_AXIS_INIT				:
+//				asda.MR_Init();
+//				IF asda.Active AND NOT asda.Busy THEN
+//					eAsdaManual := VISU_CTRL_AXIS_WAIT_FOR_CMD;
+//				END_IF
 				
-			VISU_CTRL_AXIS_RESET			:
-				asda.MR_Reset();
-				IF NOT asda.Error AND NOT asda.Busy THEN
-					eAsdaManual := VISU_CTRL_AXIS_WAIT_FOR_CMD;
-				END_IF
+//			VISU_CTRL_AXIS_RESET			:
+//				asda.MR_Reset();
+//				IF NOT asda.Error AND NOT asda.Busy THEN
+//					eAsdaManual := VISU_CTRL_AXIS_WAIT_FOR_CMD;
+//				END_IF
 				
-			VISU_CTRL_AXIS_HOME				:
-				asda.MR_HomeEx();
-				IF asda.IsHomed AND NOT asda.Busy THEN
-					eAsdaManual := VISU_CTRL_AXIS_WAIT_FOR_CMD;
-				END_IF
+//			VISU_CTRL_AXIS_HOME				:
+//				asda.MR_HomeEx();
+//				IF asda.IsHomed AND NOT asda.Busy THEN
+//					eAsdaManual := VISU_CTRL_AXIS_WAIT_FOR_CMD;
+//				END_IF
 				
-			VISU_CTRL_AXIS_MOVE_ABSOLUTE	:
-				asda.MR_MoveAbsolute(fPosition);
-				IF asda.InPosition AND NOT asda.Busy THEN
-					eAsdaManual := VISU_CTRL_AXIS_WAIT_FOR_CMD;
-				END_IF
+//			VISU_CTRL_AXIS_MOVE_ABSOLUTE	:
+//				asda.MR_MoveAbsolute(fPosition);
+//				IF asda.InPosition AND NOT asda.Busy THEN
+//					eAsdaManual := VISU_CTRL_AXIS_WAIT_FOR_CMD;
+//				END_IF
 				
-			VISU_CTRL_AXIS_ABORT			:
-				asda.MR_Abort();
-				IF NOT asda.Active AND NOT asda.Busy THEN
-					eAsdaManual := VISU_CTRL_AXIS_WAIT_FOR_CMD;					
-				END_IF
-		END_CASE
-	30: // Auto
-		CASE nStateAuto OF
-			0: // move position1
-				asda.MR_MoveAbsolute(5000);
-				IF asda.InPosition AND NOT asda.Busy THEN
-					nStateAuto := 10;
-				END_IF
-			10: //MOVE Position 2
-			   	asda.MR_MoveAbsolute(20000);
-				IF asda.InPosition AND NOT asda.Busy THEN
-					nStateAuto := 0;
-				END_IF
-		END_CASE
+//			VISU_CTRL_AXIS_ABORT			:
+//				asda.MR_Abort();
+//				IF NOT asda.Active AND NOT asda.Busy THEN
+//					eAsdaManual := VISU_CTRL_AXIS_WAIT_FOR_CMD;					
+//				END_IF
+//		END_CASE
+//	30: // Auto
+//		CASE nStateAuto OF
+//			0: // move position1
+//				asda.MR_MoveAbsolute(5000);
+//				IF asda.InPosition AND NOT asda.Busy THEN
+//					nStateAuto := 10;
+//				END_IF
+//			10: //MOVE Position 2
+//			   	asda.MR_MoveAbsolute(20000);
+//				IF asda.InPosition AND NOT asda.Busy THEN
+//					nStateAuto := 0;
+//				END_IF
+//		END_CASE
 		
-END_CASE
-asda();
-fbMasterRTU();]]></ST>
+//END_CASE
+//asda();
+//fbMasterRTU();
+//IF bFirstCycle THEN
+//	bFirstCycle := FALSE;
+//	SlaveTcp1.IpAddr := '192.168.0.7';
+//	SlaveTcp1.FirstCycle( sName := 'Sl1', iUnitID := 1);
+//	SlaveTcp1.TcpPort := 502;
+//	SlaveTcp2.IpAddr := '192.168.0.7';
+//	SlaveTcp2.FirstCycle( sName := 'Sl2', iUnitID := 2);	
+//	SlaveTcp2.TcpPort := 505;
+//	fbModbusMasterTcp1.RegisterSlave(SlaveTcp1);
+//	fbModbusMasterTcp2.RegisterSlave(SlaveTcp2);
+//	fbModbusMasterTcp1.Timeout := 3000;
+//	fbModbusMasterTcp2.Timeout := 3000;
+//END_IF
+//IF bRun THEN
+//	fbModbusMasterTcp1.Run();
+//	fbModbusMasterTcp2.Run();
+//ELSE
+//	fbModbusMasterTcp1.Stop();
+//	fbModbusMasterTcp2.Stop();	
+//END_IF
+//SlaveTcp1();
+//SlaveTcp2();
+//fbModbusMasterTcp1();
+//fbModbusMasterTcp2();]]></ST>
     </Implementation>
     <LineIds Name="POU">
       <LineId Id="50" Count="0" />
@@ -177,6 +209,23 @@ fbMasterRTU();]]></ST>
       <LineId Id="42" Count="0" />
       <LineId Id="33" Count="0" />
       <LineId Id="48" Count="0" />
+      <LineId Id="221" Count="1" />
+      <LineId Id="233" Count="0" />
+      <LineId Id="243" Count="0" />
+      <LineId Id="235" Count="0" />
+      <LineId Id="234" Count="0" />
+      <LineId Id="245" Count="0" />
+      <LineId Id="237" Count="0" />
+      <LineId Id="224" Count="1" />
+      <LineId Id="246" Count="1" />
+      <LineId Id="223" Count="0" />
+      <LineId Id="227" Count="0" />
+      <LineId Id="219" Count="0" />
+      <LineId Id="228" Count="1" />
+      <LineId Id="232" Count="0" />
+      <LineId Id="230" Count="1" />
+      <LineId Id="241" Count="1" />
+      <LineId Id="239" Count="1" />
     </LineIds>
   </POU>
 </TcPlcObject>

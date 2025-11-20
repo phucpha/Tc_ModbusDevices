@@ -122,6 +122,9 @@
     <Compile Include="POUs\Smowo\FB_LoadCell_Smowo.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="POUs\Smowo\FB_LoadCell_Smowo_Tcp.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="POUs\Smowo\FB_LoadCell_SwomoConfig.TcPOU">
       <SubType>Code</SubType>
     </Compile>

@@ -10,6 +10,13 @@
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
+    <Property Name="Busy" Id="{3d9eadb8-ae5b-4a60-8bc1-c30e65f653b8}">
+      <Declaration><![CDATA[PROPERTY Busy : REFERENCE TO BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{fca112d1-e58c-4453-aff0-143bf40c6f8c}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
     <Property Name="Error" Id="{5fd1ffb0-7593-4fff-a0ad-e35dfc2e2777}">
       <Declaration><![CDATA[PROPERTY Error : REFERENCE TO BOOL
 ]]></Declaration>

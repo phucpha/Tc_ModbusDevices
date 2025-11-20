@@ -115,7 +115,13 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IF eAxisState = AXIS_IDLE AND THIS^.lrActualPosition <> lrAbsolutePosition THEN
+        <ST><![CDATA[IF eAxisState = AXIS_IDLE AND
+	NOT F_InRange(
+		bound1 := THIS^.lrAbsolutePosition + 5,
+		bound2 := THIS^.lrAbsolutePosition - 5,
+		value := lrAbsolutePosition,
+	)
+THEN
 	THIS^.lrAbsolutePosition := lrAbsolutePosition;
 	bMoveAbsolute := TRUE;
 	bInPostion 	:= FALSE;
@@ -324,7 +330,10 @@ END_VAR
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_ASDAB3.MR_MoveAbsolute">
-      <LineId Id="3" Count="19" />
+      <LineId Id="3" Count="0" />
+      <LineId Id="34" Count="4" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="4" Count="18" />
       <LineId Id="24" Count="3" />
       <LineId Id="2" Count="0" />
     </LineIds>

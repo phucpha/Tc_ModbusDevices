@@ -1,0 +1,126 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_LoadCell_Smowo_Tcp" Id="{e30af404-749b-4f7c-b106-9183d8f74207}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_LoadCell_Smowo_Tcp EXTENDS FB_ModbusSlaveTcp
+VAR
+	lrValueRaw : LREAL;
+	lrValueGram : LREAL;
+	lrValueKg : LREAL;
+	TmpData : U_Word2Dint;
+	bEnableReallyError : BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[tonConfirmReallyError(
+	IN := bModbusError,
+	PT := timeConfirmReallyError,
+	Q => bReallyError 
+);
+SUPER^();]]></ST>
+    </Implementation>
+    <Method Name="Convert" Id="{2b87e225-58d9-4340-870a-0c91076d83c2}">
+      <Declaration><![CDATA[METHOD Convert : BOOL
+VAR_INPUT
+	iRegionNo	: 	INT;
+	pReadData	:	POINTER TO word;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE iRegionNo OF
+	0:
+		TmpData.iWord[1] := pReadData[0];
+		TmpData.iWord[0] := pReadData[1];
+		lrValueGram := DINT_TO_LREAL(TmpData.idInt) ;
+		lrValueKg := lrValueGram * 0.001;
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="EnableReallyError" Id="{db21fd32-ad3f-46ef-9027-8fe287c987dd}">
+      <Declaration><![CDATA[PROPERTY EnableReallyError : bool]]></Declaration>
+      <Get Name="Get" Id="{84e1b325-f039-48a9-9898-6afd2e99d29f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[EnableReallyError := bEnableReallyError;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{f9faea23-9557-4776-afc8-ff3905869b35}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bEnableReallyError := EnableReallyError;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="FirstCycle" Id="{f7e72015-3a1a-4225-871e-8da71edf00fc}">
+      <Declaration><![CDATA[METHOD FirstCycle // must be call once time 
+VAR_INPUT
+	sName : STRING;
+	iUnitID : BYTE ; // modbus address of the device : 1- 255
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.sName := sName;
+THIS^.iUnitID := iUnitID;
+
+arrAddressRead[0][0] := 0;
+arrAddressRead[0][1] := 2;
+arrAddressRead[0][2] := TC_ModbusBase.E_ModbusFunction.ReadHoldingRegisters;
+iNumAddRegionRead := 1;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="ValueGram" Id="{0779f1e0-95c5-4a99-9290-a85212e5d865}">
+      <Declaration><![CDATA[PROPERTY ValueGram : reference to lreal]]></Declaration>
+      <Get Name="Get" Id="{7ed4464f-d412-4f77-a082-065c61c940ca}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ValueGram REF= lrValueGram;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ValueKg" Id="{70ef822d-ba89-4d92-a57a-7e10348835cf}">
+      <Declaration><![CDATA[PROPERTY ValueKg : reference to lreal]]></Declaration>
+      <Get Name="Get" Id="{80fa45e1-ad71-4775-b1d9-98cc2a7b6f93}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ValueKg ref= lrValueKg;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <LineIds Name="FB_LoadCell_Smowo_Tcp">
+      <LineId Id="17" Count="4" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_Smowo_Tcp.Convert">
+      <LineId Id="7" Count="1" />
+      <LineId Id="13" Count="1" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_Smowo_Tcp.EnableReallyError.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_Smowo_Tcp.EnableReallyError.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_Smowo_Tcp.FirstCycle">
+      <LineId Id="7" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="22" Count="3" />
+      <LineId Id="21" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_Smowo_Tcp.ValueGram.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_Smowo_Tcp.ValueKg.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
