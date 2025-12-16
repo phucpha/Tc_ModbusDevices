@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_SV660P_Status" Id="{8c9a325e-efe2-4da9-885f-d21ef31e23f1}">
+    <Declaration><![CDATA[{attribute 'strict'}
+{attribute 'to_string'}
+TYPE E_SV660P_Status :
+(
+	SV660P_NOT_RESPOND		:= 0,
+	SV660P_NOT_READY			:= 10,
+	SV660P_READY				:= 20,
+	SV660P_DRIVE_NOT_READY	:= 30,
+	SV660P_DRIVE_READY		:= 40,
+	SV660P_DRIVE_RUNNING		:= 50,
+	SV660P_DRIVE_FAULT		:= 60
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

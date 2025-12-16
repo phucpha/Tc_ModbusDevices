@@ -21,6 +21,7 @@ VAR
 //	SlaveTcp2 : FB_LoadCell_Smowo_Tcp;
 //	bFirstCycle : BOOL := TRUE;
 //	bRun : BOOL := TRUE;
+a  : FB_SV660P;
 END_VAR
 ]]></Declaration>
     <Implementation>

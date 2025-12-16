@@ -19,7 +19,7 @@
     <Company>NewEngineer</Company>
     <Released>false</Released>
     <Title>Tc_ModbusDevices</Title>
-    <ProjectVersion>2.3.0.0</ProjectVersion>
+    <ProjectVersion>2.4.1.0</ProjectVersion>
     <LibraryCategories>
       <LibraryCategory>
         <Id>{34b615cd-45ba-4d29-985a-190ea3e88038}</Id>
@@ -113,6 +113,12 @@
     <Compile Include="POUs\EmkoTemperature\FB_TemperatureRelativeHumiditySensor_Emko.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="POUs\Inovance\E_SV660P_Status.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Inovance\FB_SV660P.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="POUs\Ipro\FB_IPRO_ModbusRTU.TcPOU">
       <SubType>Code</SubType>
     </Compile>
@@ -167,6 +173,7 @@
     <Folder Include="DUTs\Visu\VFD" />
     <Folder Include="GVLs" />
     <Folder Include="POUs\EmkoTemperature" />
+    <Folder Include="POUs\Inovance" />
     <Folder Include="POUs\Ipro" />
     <Folder Include="POUs\Delta" />
     <Folder Include="POUs\Axis" />

@@ -2,6 +2,7 @@
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
   <DUT Name="E_AxisState" Id="{14a54f84-dccb-401c-8e92-981bc2bf3f3c}">
     <Declaration><![CDATA[{attribute 'strict'}
+{attribute 'to_string'}
 TYPE E_AxisState :
 (
 	AXIS_UNINITIALIZED		:= 0,	(* Axis is not prepared to work - power is off *)

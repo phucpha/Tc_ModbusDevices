@@ -1,0 +1,380 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_SV660P" Id="{72d7a69c-22dc-4bd2-a160-6c76fa62b6c6}" SpecialFunc="None">
+    <Declaration><![CDATA[(*
+***Note
+	Still in Beta version.
+***Setting Driver:
+	/parameter /SetValue /Discription the value
+	H02.00: 1: Position Mode
+	H02.01: 1: Absolute position liner mode
+	H02.02: : CCW or CC
+	
+	H05.00: 2: Multiposition reference
+	H05.07-13: electric gear : default value
+	// communication setting : offcouse you know how to set it. i don't mentioned it here, I just mentioned specipic needed params
+	H0C.09: 1: Enable : VDI
+	H0C.11: 1: Enable : VD0
+	H0C.25: 0: delay response
+	H0C.26: 1: low16 bit before high 16 bit
+	
+	H11.00: 5: Axis control continous operation
+	H11.01(End segments of displacement instruction): 1
+	H11.02: 0: Countinue to execute the unexpected displacement
+	H11.04: 2: absolute displacement reference
+	H11.05(Start displacement N0 in sequential operation): 1:
+	H11.10-11,14,15,16: speed, acceleration
+	
+	H17.00(VDI1): 1: S-On
+	H17.02(VDI2): 2: Alarm Reset signal
+	H17.04(VDI3): 28: Multiposition reference enable
+	H17.06(VDI4): 38: Write command interupted
+*)
+FUNCTION_BLOCK FB_SV660P EXTENDS FB_UniversalAxis IMPLEMENTS I_UniversalAxis, I_AxisMoveAbsolute
+VAR
+	eServoState : E_AxisState;
+	arruMonitor : ARRAY[0..0] OF U_Word2Dint;		// Register mornitoring : 0 : position feedback
+	eServoStatus : E_SV660P_Status;
+	uPositionCmd : U_Word2Dint;
+	uSpeedCmd : U_Word2Dint;
+	nStatusRead : WORD;
+	nVDI : WORD;	// read VDI
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[bError := bModbusError OR iErrorID<>0;
+CASE eAxisState OF
+	AXIS_INITIALIZING..AXIS_RESET_DONE, AXIS_ABORTING:
+		tonConfirmReallyError(
+			IN := bError OR bModbusError,
+			PT := timeConfirmReallyError,
+			Q => bReallyError 
+		);
+END_CASE
+SUPER^();]]></ST>
+    </Implementation>
+    <Property Name="ActualPosition" Id="{690fc96e-a10d-4769-b964-49d0f917f96f}">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY ActualPosition : REFERENCE TO LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{c77aeb03-21a6-4f0e-8d5c-27204d3336e7}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ActualPosition REF= lrActualPosition;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="Convert" Id="{66c3fdab-9673-4d86-ad24-891114a5224b}">
+      <Declaration><![CDATA[METHOD Convert : BOOL
+VAR_INPUT
+	iRegionNo	:	INT;
+	pReadData	:	POINTER TO word;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+CASE iRegionNo OF 
+	0:// position
+		arruMonitor[0].iWord[0] := pReadData[0];
+		arruMonitor[0].iWord[1] := pReadData[1];
+		lrActualPosition := DINT_TO_LREAL(arruMonitor[0].idInt);
+	1:// System status	
+		nStatusRead := pReadData[0];
+		IF NOT pReadData[0].0 THEN
+			eServoStatus := SV660P_NOT_READY;
+		ELSE
+			IF NOT pReadData[0].12 AND NOT pReadData[0].13 THEN
+				eServoStatus := SV660P_NOT_READY;
+				
+			ELSIF pReadData[0].12 AND NOT pReadData[0].13 THEN
+				eServoStatus := SV660P_DRIVE_READY;
+				
+			ELSIF NOT pReadData[0].12 AND pReadData[0].13 THEN
+				eServoStatus := SV660P_DRIVE_RUNNING;
+				
+			ELSIF pReadData[0].12 AND pReadData[0].13 THEN
+				eServoStatus := SV660P_DRIVE_FAULT;
+			END_IF
+		END_IF
+		
+	2:// ERRID
+		iErrorID := pReadData[0];
+	3: 
+		nVDI := pReadData[0];
+
+	
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="InPosition" Id="{2d48c013-4504-4c39-ac82-fe808bc899cd}">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY InPosition : REFERENCE TO BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{40bc66eb-6c93-4a9f-b823-90b02844e204}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[InPosition REF= bInPostion;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="MR_MoveAbsolute" Id="{6a59d240-3515-479d-99ad-3cc39809cba7}">
+      <Declaration><![CDATA[METHOD MR_MoveAbsolute : BOOL
+VAR_INPUT
+	lrAbsolutePosition : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF eAxisState = AXIS_IDLE AND
+	NOT F_InRange(
+		bound1 := THIS^.lrAbsolutePosition + 20,
+		bound2 := THIS^.lrAbsolutePosition - 20,
+		value := lrAbsolutePosition,
+	)
+THEN
+	THIS^.lrAbsolutePosition := lrAbsolutePosition;
+	bMoveAbsolute := TRUE;
+	bInPostion 	:= FALSE;
+	bInVelocity := FALSE;
+	bMoveActive := TRUE;
+	bStopped 	:= FALSE;
+	bHalted 	:= FALSE;
+	bJogDone 	:= FALSE;
+	
+	eAxisState := AXIS_MOVE_ABSOLUTE;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : move absolute requested'));		
+	
+ELSIF eAxisState = AXIS_MOVE_ABSOLUTE_DONE THEN
+	bInPostion 		:= TRUE;
+	bInVelocity		:= FALSE;
+	bMoveActive 	:= FALSE;
+	bStopped 		:= FALSE;
+	bHalted			:= FALSE;
+	bJogDone 		:= FALSE;
+	bMoveAbsolute 	:= FALSE;
+	MR_MoveAbsolute := TRUE;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : move absolute done'));		
+	
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Aborting" Id="{8db367d6-80b8-4374-b099-00e6371753c3}">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Aborting
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// set S ON  = false.
+arrAddressWrite[1][2] := 2#0;
+IF eServoStatus <> SV660P_DRIVE_RUNNING THEN
+	eAxisState := AXIS_UNINITIALIZED;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Initializing" Id="{2b91a960-7290-42f1-8077-5b307bbebd6d}">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Initializing
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SUPER^.MS_Initializing();
+arrAddressWrite[1][2] := 2#1;
+IF eServoStatus = SV660P_DRIVE_RUNNING THEN
+	eAxisState := AXIS_READY_INITIALIZED;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_MoveAbsolute" Id="{02a651b9-fea6-4846-98b7-15b974e8e265}">
+      <Declaration><![CDATA[METHOD PROTECTED  MS_MoveAbsolute
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+// set position
+uPositionCmd.idInt := LREAL_TO_DINT(lrAbsolutePosition);
+arrAddressWrite[0][2] := uPositionCmd.iWord[0];
+arrAddressWrite[0][3] := uPositionCmd.iWord[1];
+// set cmd run absolute.
+IF nVDI.3 THEN
+	arrAddressWrite[1][2] := 2#0101;
+ELSE 
+	arrAddressWrite[1][2] := 2#1101;	
+END_IF
+
+IF F_InRange(
+	bound1 := lrAbsolutePosition+100,
+	bound2 := lrAbsolutePosition-100,
+	value := lrActualPosition
+	)
+THEN
+	eAxisState := AXIS_MOVE_ABSOLUTE_DONE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Reset" Id="{c1a044f6-17c0-4925-bb34-bcd0abf761be}">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Reset
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Uninitalized" Id="{65383aee-6fbd-469b-9c61-8304682abe0f}">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Uninitalized
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SUPER^.MS_Uninitalized();
+bBusy := FALSE;
+// Read
+arrAddressRead[0][0] := 16#B_07;	// monitoring position
+arrAddressRead[0][1] := 2;
+arrAddressRead[0][2] := E_ModbusFunction.ReadHoldingRegisters;
+
+arrAddressRead[1][0] := 16#30_00; // system status
+arrAddressRead[1][1] := 1;
+arrAddressRead[1][2] := E_ModbusFunction.ReadHoldingRegisters;
+
+arrAddressRead[2][0] := 16#B22; // errorID: 		0B-34 // 10x34 = 16x22
+arrAddressRead[2][1] := 1;
+arrAddressRead[2][2] := E_ModbusFunction.ReadHoldingRegisters;
+
+arrAddressRead[3][0] := 16#31_00; // Read level VDI H31.00
+arrAddressRead[3][1] := 1;
+arrAddressRead[3][2] := E_ModbusFunction.ReadHoldingRegisters;
+iNumAddRegionRead := 4;
+
+// write	
+	arrAddressWrite[0][0] := 16#11_0C; // // set position H11.12 = 110C
+	arrAddressWrite[0][1] := 2;
+	arrAddressWrite[0][2] := 0;
+	arrAddressWrite[0][3] := 0;
+	arrAddressWrite[0][10] := E_ModbusFunction.WriteMultipleRegisters;
+	
+	arrAddressWrite[1][0] := 16#31_00; // set level VDI H31.00
+	arrAddressWrite[1][1] := 1;
+	arrAddressWrite[1][2] := 0;
+	arrAddressWrite[1][10] := E_ModbusFunction.WriteSingleRegister;
+	
+iNumAddRegionWrite := 2;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="SetpointPosition" Id="{92cc5c7c-f94e-4115-881f-4c3a616b4ce1}">
+      <Declaration><![CDATA[(*Please note this properties currently return the lrAbsolutePosition,
+-If you expand the FB to implement other I_AxisMove..., you need to change this property's implement, and this note.
+*)
+PROPERTY SetpointPosition : LREAL]]></Declaration>
+      <Get Name="Get" Id="{986675d1-fe13-40fe-9c9f-034fe80d63d4}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[SetpointPosition := lrAbsolutePosition;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <LineIds Name="FB_SV660P">
+      <LineId Id="17" Count="8" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SV660P.ActualPosition.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SV660P.Convert">
+      <LineId Id="174" Count="0" />
+      <LineId Id="160" Count="1" />
+      <LineId Id="175" Count="1" />
+      <LineId Id="162" Count="1" />
+      <LineId Id="198" Count="0" />
+      <LineId Id="177" Count="4" />
+      <LineId Id="191" Count="0" />
+      <LineId Id="182" Count="1" />
+      <LineId Id="190" Count="0" />
+      <LineId Id="184" Count="1" />
+      <LineId Id="189" Count="0" />
+      <LineId Id="186" Count="2" />
+      <LineId Id="164" Count="0" />
+      <LineId Id="192" Count="0" />
+      <LineId Id="165" Count="1" />
+      <LineId Id="204" Count="1" />
+      <LineId Id="172" Count="1" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="20" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SV660P.InPosition.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SV660P.MR_MoveAbsolute">
+      <LineId Id="3" Count="0" />
+      <LineId Id="34" Count="4" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="4" Count="18" />
+      <LineId Id="24" Count="3" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SV660P.MS_Aborting">
+      <LineId Id="39" Count="0" />
+      <LineId Id="7" Count="0" />
+      <LineId Id="40" Count="1" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="6" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SV660P.MS_Initializing">
+      <LineId Id="5" Count="0" />
+      <LineId Id="7" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="6" Count="0" />
+      <LineId Id="13" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SV660P.MS_MoveAbsolute">
+      <LineId Id="39" Count="0" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="7" Count="1" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="43" Count="4" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="13" Count="3" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SV660P.MS_Reset">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SV660P.MS_Uninitalized">
+      <LineId Id="5" Count="0" />
+      <LineId Id="8" Count="4" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="55" Count="1" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="17" Count="3" />
+      <LineId Id="99" Count="2" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="25" Count="2" />
+      <LineId Id="62" Count="1" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="71" Count="0" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="96" Count="2" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="93" Count="0" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SV660P.SetpointPosition.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

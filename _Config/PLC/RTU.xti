@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <TcSmItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4024.56" ClassName="CNestedPlcProjDef">
 	<Project GUID="{801BB319-3AC8-4DD7-9EAF-1CE6A49D935D}" Name="RTU" PrjFilePath="..\..\RTU\RTU.plcproj" TmcFilePath="..\..\RTU\RTU.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e" SymbolicMapping="true">
-		<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="RTU\RTU.tmc" TmcHash="{E8A27777-9D65-5FF9-C468-43F0D1EEDB18}">
+		<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="RTU\RTU.tmc" TmcHash="{734067E5-F95E-405C-2D27-2A892752F880}">
 			<Name>RTU Instance</Name>
 			<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
 			<Contexts>
