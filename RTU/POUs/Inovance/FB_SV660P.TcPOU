@@ -21,7 +21,7 @@
 	H11.00: 5: Axis control continous operation
 	H11.01(End segments of displacement instruction): 1
 	H11.02: 0: Countinue to execute the unexpected displacement
-	H11.04: 2: absolute displacement reference
+	H11.04: 1: absolute displacement reference
 	H11.05(Start displacement N0 in sequential operation): 1:
 	H11.10-11,14,15,16: speed, acceleration
 	

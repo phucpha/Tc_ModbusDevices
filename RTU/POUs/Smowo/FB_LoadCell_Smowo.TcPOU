@@ -8,6 +8,8 @@ VAR
 	lrValueKg : LREAL;
 	TmpData : U_Word2Dint;
 	bEnableReallyError : BOOL;
+	lrRawValue : LREAL; // receive from module
+	lrTareValue : LREAL; // Value at tare
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -30,7 +32,8 @@ END_VAR
 	0:
 		TmpData.iWord[1] := pReadData[0];
 		TmpData.iWord[0] := pReadData[1];
-		lrValueGram := DINT_TO_LREAL(TmpData.idInt) ;
+		lrRawValue := DINT_TO_LREAL(TmpData.idInt);
+		lrValueGram :=  lrRawValue-lrTareValue;
 		lrValueKg := lrValueGram * 0.001;
 END_CASE]]></ST>
       </Implementation>
@@ -71,6 +74,25 @@ arrAddressRead[0][2] := TC_ModbusBase.E_ModbusFunction.ReadHoldingRegisters;
 iNumAddRegionRead := 1;]]></ST>
       </Implementation>
     </Method>
+    <Property Name="TareValue" Id="{4d479054-a0dc-41b6-ab08-8f7d7fb120b6}">
+      <Declaration><![CDATA[PROPERTY TareValue : Lreal]]></Declaration>
+      <Get Name="Get" Id="{24ca55aa-d932-4a57-9fb3-e7f7e29ecd84}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[TareValue := lrTareValue;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{6e40eb58-4f9e-4e2a-8057-6f661f32b8f8}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[lrTareValue := TareValue;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
     <Property Name="ValueGram" Id="{6bfa4383-7f76-4f9d-aa73-cd9028500bbe}">
       <Declaration><![CDATA[PROPERTY ValueGram : reference to lreal]]></Declaration>
       <Get Name="Get" Id="{d057e907-b377-4627-a8a5-ae196526c980}">
@@ -102,6 +124,7 @@ END_VAR
       <LineId Id="7" Count="1" />
       <LineId Id="13" Count="1" />
       <LineId Id="12" Count="0" />
+      <LineId Id="26" Count="0" />
       <LineId Id="20" Count="0" />
       <LineId Id="9" Count="0" />
     </LineIds>
@@ -116,6 +139,12 @@ END_VAR
       <LineId Id="20" Count="0" />
       <LineId Id="22" Count="3" />
       <LineId Id="21" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_Smowo.TareValue.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_Smowo.TareValue.Set">
+      <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_LoadCell_Smowo.ValueGram.Get">
       <LineId Id="2" Count="0" />
