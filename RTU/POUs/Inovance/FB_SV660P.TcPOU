@@ -191,7 +191,7 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[SUPER^.MS_Initializing();
-arrAddressWrite[1][2] := 2#1;
+arrAddressWrite[1][2] := 2#11;
 IF eServoStatus = SV660P_DRIVE_RUNNING THEN
 	eAxisState := AXIS_READY_INITIALIZED;
 END_IF
