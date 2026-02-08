@@ -29,6 +29,12 @@
 	H17.02(VDI2): 2: Alarm Reset signal
 	H17.04(VDI3): 28: Multiposition reference enable
 	H17.06(VDI4): 38: Write command interupted
+	
+	** set position to 0:
+		1. choose "reset to zero" in software
+		2. choose "origin return method" => choose "pre-set zero"
+		3. push "next page" 
+		4. in the next page => push "servo on" then push the hammer symbol .
 *)
 FUNCTION_BLOCK FB_SV660P EXTENDS FB_UniversalAxis IMPLEMENTS I_UniversalAxis, I_AxisMoveAbsolute
 VAR
@@ -111,14 +117,16 @@ END_CASE
     </Method>
     <Property Name="InPosition" Id="{2d48c013-4504-4c39-ac82-fe808bc899cd}">
       <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
-PROPERTY InPosition : REFERENCE TO BOOL
+PROPERTY InPosition : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{40bc66eb-6c93-4a9f-b823-90b02844e204}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[InPosition REF= bInPostion;]]></ST>
+          <ST><![CDATA[InPosition := F_CheckInRange( lrHighLimit := lrActualPosition+20,
+						lrLowLimit := lrActualPosition-20,
+						lrValue := lrAbsolutePosition);]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -311,6 +319,7 @@ END_VAR
       <LineId Id="20" Count="0" />
     </LineIds>
     <LineIds Name="FB_SV660P.InPosition.Get">
+      <LineId Id="5" Count="1" />
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_SV660P.MR_MoveAbsolute">

@@ -68,14 +68,16 @@ END_CASE
     </Method>
     <Property Name="InPosition" Id="{fdcba98e-dfc2-44a3-90e1-1d47110fd6e7}" FolderPath="Status\">
       <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
-PROPERTY InPosition : REFERENCE TO BOOL
+PROPERTY InPosition : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{311c2db5-e528-46bf-8a54-4443989880e8}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[InPosition REF= bInPostion;]]></ST>
+          <ST><![CDATA[InPosition := F_CheckInRange( lrHighLimit := lrActualPosition+20,
+						lrLowLimit := lrActualPosition-20,
+						lrValue := lrAbsolutePosition);]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -320,6 +322,7 @@ END_VAR
       <LineId Id="20" Count="0" />
     </LineIds>
     <LineIds Name="FB_ASDAB3.InPosition.Get">
+      <LineId Id="5" Count="1" />
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_ASDAB3.IsHomed.Get">

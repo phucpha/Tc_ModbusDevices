@@ -13,7 +13,7 @@ PROPERTY ActualPosition : REFERENCE TO LREAL
     </Property>
     <Property Name="InPosition" Id="{76d96262-ce60-47f5-b46a-3c38f0edb9b4}">
       <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
-PROPERTY InPosition : REFERENCE TO BOOL
+PROPERTY InPosition : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{b146c69e-160d-4ae3-9693-96d2a8d80228}">
         <Declaration><![CDATA[]]></Declaration>

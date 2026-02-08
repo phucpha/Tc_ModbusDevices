@@ -8,6 +8,8 @@ VAR
 	lrValueKg : LREAL;
 	TmpData : U_Word2Dint;
 	bEnableReallyError : BOOL;
+	lrRawValue : LREAL; // receive from module
+	lrTareValue : LREAL; // Value at tare
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -30,7 +32,8 @@ END_VAR
 	0:
 		TmpData.iWord[1] := pReadData[0];
 		TmpData.iWord[0] := pReadData[1];
-		lrValueGram := DINT_TO_LREAL(TmpData.idInt) ;
+		lrRawValue := DINT_TO_LREAL(TmpData.idInt);
+		lrValueGram :=  lrRawValue-lrTareValue;
 		lrValueKg := lrValueGram * 0.001;
 END_CASE]]></ST>
       </Implementation>
@@ -71,6 +74,36 @@ arrAddressRead[0][2] := TC_ModbusBase.E_ModbusFunction.ReadHoldingRegisters;
 iNumAddRegionRead := 1;]]></ST>
       </Implementation>
     </Method>
+    <Property Name="RawValue" Id="{89fdfc39-cbb7-4852-86a5-6ecdc315adfd}">
+      <Declaration><![CDATA[PROPERTY RawValue : Lreal]]></Declaration>
+      <Get Name="Get" Id="{5af92946-ec89-4aeb-adb8-951a4c358a38}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[RawValue := lrRawValue;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="TareValue" Id="{0b8a493a-d770-47b2-a088-28590867c0a8}">
+      <Declaration><![CDATA[PROPERTY TareValue : Lreal]]></Declaration>
+      <Get Name="Get" Id="{91fc310d-da5f-43d9-8c73-180b4aef06a1}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[TareValue := lrTareValue;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{24d14422-496b-49a6-b957-969ed4e2b93e}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[lrTareValue := TareValue;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
     <Property Name="ValueGram" Id="{0779f1e0-95c5-4a99-9290-a85212e5d865}">
       <Declaration><![CDATA[PROPERTY ValueGram : reference to lreal]]></Declaration>
       <Get Name="Get" Id="{7ed4464f-d412-4f77-a082-065c61c940ca}">
@@ -98,10 +131,7 @@ END_VAR
       <LineId Id="9" Count="0" />
     </LineIds>
     <LineIds Name="FB_LoadCell_Smowo_Tcp.Convert">
-      <LineId Id="7" Count="1" />
-      <LineId Id="13" Count="1" />
-      <LineId Id="12" Count="0" />
-      <LineId Id="20" Count="0" />
+      <LineId Id="26" Count="6" />
       <LineId Id="9" Count="0" />
     </LineIds>
     <LineIds Name="FB_LoadCell_Smowo_Tcp.EnableReallyError.Get">
@@ -115,6 +145,15 @@ END_VAR
       <LineId Id="20" Count="0" />
       <LineId Id="22" Count="3" />
       <LineId Id="21" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_Smowo_Tcp.RawValue.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_Smowo_Tcp.TareValue.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_LoadCell_Smowo_Tcp.TareValue.Set">
+      <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_LoadCell_Smowo_Tcp.ValueGram.Get">
       <LineId Id="2" Count="0" />
