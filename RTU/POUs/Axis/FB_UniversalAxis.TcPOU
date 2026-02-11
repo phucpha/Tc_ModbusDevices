@@ -1340,9 +1340,9 @@ bPowerOn			:= FALSE;
 bStopped			:= FALSE;
 bJogDone			:= FALSE;
 bLocked				:= FALSE;
-lrActualPosition 	:= 0.0;
-lrActualVelocity 	:= 0.0;
-iErrorID			:= 0;
+//lrActualPosition 	:= 0.0;
+//lrActualVelocity 	:= 0.0;
+//iErrorID			:= 0;
 ]]></ST>
       </Implementation>
     </Method>

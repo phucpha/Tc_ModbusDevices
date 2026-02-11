@@ -35,10 +35,11 @@
 		2. choose "origin return method" => choose "pre-set zero"
 		3. push "next page" 
 		4. in the next page => push "servo on" then push the hammer symbol .
+	** Fault diagnostics:
+		E731.0 : Encoder battery failure => software => parameter list => H0D(auxiliary function params) => H0D.20 multi-turn absolutely encoder reset => 1 or 2.
 *)
 FUNCTION_BLOCK FB_SV660P EXTENDS FB_UniversalAxis IMPLEMENTS I_UniversalAxis, I_AxisMoveAbsolute
 VAR
-	eServoState : E_AxisState;
 	arruMonitor : ARRAY[0..0] OF U_Word2Dint;		// Register mornitoring : 0 : position feedback
 	eServoStatus : E_SV660P_Status;
 	uPositionCmd : U_Word2Dint;
@@ -191,7 +192,7 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[SUPER^.MS_Initializing();
-arrAddressWrite[1][2] := 2#11;
+arrAddressWrite[1][2] := 2#1;
 IF eServoStatus = SV660P_DRIVE_RUNNING THEN
 	eAxisState := AXIS_READY_INITIALIZED;
 END_IF
@@ -232,7 +233,11 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[]]></ST>
+        <ST><![CDATA[arrAddressWrite[1][2] := 2#11;
+IF NOT Error THEN
+	arrAddressWrite[1][2] := 2#1;
+	eAxisState := AXIS_RESET_DONE;
+END_IF]]></ST>
       </Implementation>
     </Method>
     <Method Name="MS_Uninitalized" Id="{65383aee-6fbd-469b-9c61-8304682abe0f}">
@@ -361,6 +366,9 @@ END_VAR
     </LineIds>
     <LineIds Name="FB_SV660P.MS_Reset">
       <LineId Id="5" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="10" Count="1" />
     </LineIds>
     <LineIds Name="FB_SV660P.MS_Uninitalized">
       <LineId Id="5" Count="0" />
