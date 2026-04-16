@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
   <POU Name="FB_IPRO_ModbusRTU" Id="{779a38f8-03a4-4a78-bdd8-18318bba4a44}" SpecialFunc="None">
-    <Declaration><![CDATA[(* this FB violate Encapsulation of OOP because it still Developing and test to understand how this device work
+    <Declaration><![CDATA[(* obsolete support after version 2.7.0.1
 -------------------------read the document bellow---------------------------------------------------------------*)
 FUNCTION_BLOCK FB_IPRO_ModbusRTU EXTENDS FB_ModbusSlaveRtu IMPLEMENTS I_Ipro_MotorPower;
 VAR

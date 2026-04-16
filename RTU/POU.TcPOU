@@ -23,6 +23,7 @@ VAR
 //	bRun : BOOL := TRUE;
 a  : FB_SV660P;
 b 	: FB_IproV2;
+asda : FB_ASDAB3;
 END_VAR
 ]]></Declaration>
     <Implementation>

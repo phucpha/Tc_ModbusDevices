@@ -156,11 +156,10 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[arrAddressWrite[1][2] := 2#0;
-IF NOT wDoStatus.1 THEN
-	SUPER^.MS_Aborting();
-	eAxisState	:= AXIS_UNINITIALIZED;	
-END_IF
+        <ST><![CDATA[arrAddressWrite[1][2] := 2#0;	// disable servo
+wDoStatus := 0;	// reset status
+SUPER^.MS_Aborting();
+eAxisState	:= AXIS_UNINITIALIZED;
 ]]></ST>
       </Implementation>
     </Method>
@@ -345,7 +344,6 @@ END_VAR
       <LineId Id="9" Count="0" />
       <LineId Id="35" Count="0" />
       <LineId Id="25" Count="0" />
-      <LineId Id="11" Count="0" />
       <LineId Id="6" Count="0" />
     </LineIds>
     <LineIds Name="FB_ASDAB3.MS_Home">
