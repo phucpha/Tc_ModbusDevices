@@ -501,9 +501,8 @@ bStop := FALSE;
 bStopLog := FALSE;
 bStopped := FALSE;
 THIS^.tonStopDelay(IN :=FALSE);
-IF eVfdStatus = VFD_STATUS_STOP OR eVfdStatus = VFD_STATUS_FAULT THEN
-	eVfdState := VFD_UNINITIALIZED;
-END_IF ]]></ST>
+eVfdState := VFD_UNINITIALIZED;
+]]></ST>
       </Implementation>
     </Method>
     <Method Name="MS_Idle" Id="{39ad5f92-ecc8-4350-8dcc-ea7c447fca61}" FolderPath="MS\">
@@ -1036,7 +1035,8 @@ END_VAR
       <LineId Id="21" Count="1" />
       <LineId Id="13" Count="0" />
       <LineId Id="16" Count="4" />
-      <LineId Id="5" Count="2" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="7" Count="0" />
     </LineIds>
     <LineIds Name="FB_UniversalVFDModbus.MS_Idle">
       <LineId Id="2" Count="0" />

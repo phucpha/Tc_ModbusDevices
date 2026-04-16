@@ -19,7 +19,7 @@
     <Company>NewEngineer</Company>
     <Released>false</Released>
     <Title>Tc_ModbusDevices</Title>
-    <ProjectVersion>2.6.4.0</ProjectVersion>
+    <ProjectVersion>3.0.0.1</ProjectVersion>
     <LibraryCategories>
       <LibraryCategory>
         <Id>{34b615cd-45ba-4d29-985a-190ea3e88038}</Id>
@@ -117,6 +117,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Inovance\FB_SV660P.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Ipro\FB_IproV2.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Ipro\FB_IPRO_ModbusRTU.TcPOU">

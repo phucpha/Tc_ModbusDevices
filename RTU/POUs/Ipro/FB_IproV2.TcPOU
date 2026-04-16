@@ -1,0 +1,302 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_IproV2" Id="{a1850c55-91c3-4ab1-8e24-07ab3cc237b8}" SpecialFunc="None">
+    <Declaration><![CDATA[(*	1. New version of FB: FB_IPRO_ModbusRTU 
+	2. I haven't test it yet.
+*) 
+FUNCTION_BLOCK FB_IproV2 EXTENDS FB_UniversalAxis IMPLEMENTS I_UniversalAxis, I_AxisMoveAbsolute
+VAR
+	eSystemStatus : E_IProStatus; 							(* r0.30 *)
+	uPositionCmd : U_Word2Dint;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[bError := bModbusError OR iErrorID<>0;
+CASE eAxisState OF
+	AXIS_INITIALIZING..AXIS_RESET_DONE, AXIS_ABORTING:
+		tonConfirmReallyError(
+			IN := bError OR bModbusError,
+			PT := timeConfirmReallyError,
+			Q => bReallyError 
+		);
+END_CASE
+SUPER^();]]></ST>
+    </Implementation>
+    <Property Name="ActualPosition" Id="{c23867ff-70a6-4d76-92c5-d92c7b1f769f}">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY ActualPosition : REFERENCE TO LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{c1768b23-7cc6-4fb8-8725-9787679389e4}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ActualPosition REF= lrActualPosition;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="Convert" Id="{5c6c2c58-3d39-4e1a-927c-75d7424dced3}">
+      <Declaration><![CDATA[METHOD Convert : BOOL
+VAR_INPUT
+	iRegionNo	:	INT;
+	pReadData	:	POINTER TO word;
+END_VAR
+VAR
+	TempData	:	 U_Word2Dint;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TempData.iWord[0] := pReadData[0];
+TempData.iWord[1] := pReadData[1];
+CASE iRegionNo OF
+	0:// position unit 1
+		lrActualPosition := DINT_TO_LREAL(TempData.idInt); //64 bit
+	1:// status read
+		eSystemStatus := pReadData[0];
+	2:// fault code
+		iErrorID := pReadData[0];// must not use word to int
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="InPosition" Id="{d37f148b-ff3f-4e48-b0e2-90024f1d89f6}">
+      <Declaration><![CDATA[(* Copy it to derived Function block if developing this function *)
+PROPERTY InPosition : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{95d56889-6b61-40f3-8cb9-8e7e54d31a8c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[InPosition := F_CheckInRange( lrHighLimit := lrActualPosition+50,
+						lrLowLimit := lrActualPosition-50,
+						lrValue := lrAbsolutePosition);]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="MR_MoveAbsolute" Id="{50001668-ff58-4ca3-b81c-7b7f114d6d59}">
+      <Declaration><![CDATA[METHOD MR_MoveAbsolute : BOOL
+VAR_INPUT
+	lrAbsolutePosition : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF eAxisState = AXIS_IDLE AND
+	NOT F_InRange(
+		bound1 := THIS^.lrAbsolutePosition + 50,
+		bound2 := THIS^.lrAbsolutePosition - 50,
+		value := lrAbsolutePosition,
+	)
+THEN
+	THIS^.lrAbsolutePosition := lrAbsolutePosition;
+	bMoveAbsolute := TRUE;
+	bInPostion 	:= FALSE;
+	bInVelocity := FALSE;
+	bMoveActive := TRUE;
+	bStopped 	:= FALSE;
+	bHalted 	:= FALSE;
+	bJogDone 	:= FALSE;
+	
+	eAxisState := AXIS_MOVE_ABSOLUTE;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : move absolute requested'));		
+	
+ELSIF eAxisState = AXIS_MOVE_ABSOLUTE_DONE THEN
+	bInPostion 		:= TRUE;
+	bInVelocity		:= FALSE;
+	bMoveActive 	:= FALSE;
+	bStopped 		:= FALSE;
+	bHalted			:= FALSE;
+	bJogDone 		:= FALSE;
+	bMoveAbsolute 	:= FALSE;
+	MR_MoveAbsolute := TRUE;
+	fbMachineLogger.MR_AddLogs(CONCAT(sName,' : move absolute done'));		
+	
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Aborting" Id="{2eb55b58-07b5-4a48-9783-5d0deaa34c78}">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Aborting
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[arrAddressWrite[0][2] := 0;//disable servo
+lrAbsolutePosition := 0;
+IF THIS^.eSystemStatus <> IPRO_STATUS_RUN THEN
+	eAxisState := AXIS_UNINITIALIZED;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Initializing" Id="{87bcaad7-643e-4f02-8293-980cd1078ebb}">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Initializing
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SUPER^.MS_Initializing();
+// this servo can't reset error by modbus
+IF THIS^.eSystemStatus = IPRO_STATUS_READY THEN // Ignor the faultcode AND nFaultCode = 0  THEN
+	arrAddressWrite[0][2] := 1;
+END_IF
+ 
+IF eSystemStatus = IPRO_STATUS_RUN THEN
+	eAxisState := AXIS_READY_INITIALIZED;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_MoveAbsolute" Id="{d67e44d3-8c54-4147-bfc4-e9ff09ead217}">
+      <Declaration><![CDATA[METHOD PROTECTED  MS_MoveAbsolute
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[uPositionCmd.idInt := LREAL_TO_DINT(lrAbsolutePosition);
+arrAddressWrite[1][2] := uPositionCmd.iWord[0];
+arrAddressWrite[1][3] := uPositionCmd.iWord[1];
+
+IF F_CheckInRange(lrHighLimit := lrAbsolutePosition + 50,
+					lrLowLimit := lrAbsolutePosition - 50,
+					lrValue := lrActualPosition)
+THEN
+	eAxisState := AXIS_MOVE_ABSOLUTE_DONE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Reset" Id="{d99a8526-91bf-41e7-8ca0-cd1b6fc70a52}">
+      <Declaration><![CDATA[(* I havn't find the way to reset this servo yet *)
+METHOD PROTECTED MS_Reset
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MS_Uninitalized" Id="{a41a3315-bf2d-4973-8d0f-2b1991284521}">
+      <Declaration><![CDATA[METHOD PROTECTED MS_Uninitalized
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SUPER^.MS_Uninitalized();
+bBusy := FALSE;
+// Read
+	arrAddressRead[0][0] := 4004;// motor position FB// reference unit 
+	arrAddressRead[0][1] := 4;
+	arrAddressRead[0][2] := E_ModbusFunction.ReadHoldingRegisters;
+	
+	arrAddressRead[1][0] := 4064;// System status // 
+	arrAddressRead[1][1] := 1;
+	arrAddressRead[1][2] := E_ModbusFunction.ReadHoldingRegisters;
+	
+	arrAddressRead[2][0] := 4198;// FaultCode
+	arrAddressRead[2][1] := 1;
+	arrAddressRead[2][2] := E_ModbusFunction.ReadHoldingRegisters;	
+	
+	iNumAddRegionRead := 3;
+	
+// write	
+	arrAddressWrite[0][0] := 1822;//	enable servo 
+	arrAddressWrite[0][1] := 1;
+	arrAddressWrite[0][2] := 0; // 0: disable,  1: enable
+	arrAddressWrite[0][10] := E_ModbusFunction.WriteSingleRegister;
+	
+	arrAddressWrite[1][0] := 1824;// 32 bit 1825
+	arrAddressWrite[1][1] := 2;
+	arrAddressWrite[1][2] := 0;
+	arrAddressWrite[1][3] := 0;
+	arrAddressWrite[1][10] := E_ModbusFunction.WriteMultipleRegisters;
+	
+	iNumAddRegionWrite := 2;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="SetpointPosition" Id="{3a238ae6-ab74-4aa3-a39d-5ab0a033ab2e}">
+      <Declaration><![CDATA[(*Please note this properties currently return the lrAbsolutePosition,
+-If you expand the FB to implement other I_AxisMove..., you need to change this property's implement, and this note.
+*)
+PROPERTY SetpointPosition : LREAL]]></Declaration>
+      <Get Name="Get" Id="{f66ef654-f874-4ecc-8330-83f0653d361a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[SetpointPosition := lrAbsolutePosition;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <LineIds Name="FB_IproV2">
+      <LineId Id="15" Count="8" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_IproV2.ActualPosition.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_IproV2.Convert">
+      <LineId Id="218" Count="0" />
+      <LineId Id="217" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="211" Count="0" />
+      <LineId Id="219" Count="0" />
+      <LineId Id="213" Count="0" />
+      <LineId Id="220" Count="0" />
+      <LineId Id="214" Count="0" />
+      <LineId Id="221" Count="0" />
+      <LineId Id="212" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_IproV2.InPosition.Get">
+      <LineId Id="5" Count="1" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_IproV2.MR_MoveAbsolute">
+      <LineId Id="3" Count="0" />
+      <LineId Id="34" Count="4" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="4" Count="18" />
+      <LineId Id="24" Count="3" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_IproV2.MS_Aborting">
+      <LineId Id="45" Count="0" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="51" Count="2" />
+      <LineId Id="6" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_IproV2.MS_Initializing">
+      <LineId Id="5" Count="0" />
+      <LineId Id="25" Count="1" />
+      <LineId Id="28" Count="4" />
+      <LineId Id="13" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_IproV2.MS_MoveAbsolute">
+      <LineId Id="51" Count="8" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_IproV2.MS_Reset">
+      <LineId Id="11" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_IproV2.MS_Uninitalized">
+      <LineId Id="5" Count="0" />
+      <LineId Id="8" Count="1" />
+      <LineId Id="105" Count="1" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="107" Count="1" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="109" Count="2" />
+      <LineId Id="122" Count="0" />
+      <LineId Id="112" Count="1" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="114" Count="2" />
+      <LineId Id="71" Count="0" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="117" Count="1" />
+      <LineId Id="120" Count="1" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="123" Count="0" />
+      <LineId Id="93" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_IproV2.SetpointPosition.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
